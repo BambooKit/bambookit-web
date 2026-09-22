@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Bot,
@@ -21,13 +21,27 @@ import { Card } from '@/components/ui/Card';
 import { TerminalViewer } from '@/components/terminal/TerminalViewer';
 import { DiffViewer } from '@/components/diff/DiffViewer';
 import { AgentReplay } from '@/components/agent/AgentReplay';
-import { DEMO_AGENTS, DEMO_TASKS } from '@/data/mockData';
-import { formatCurrency } from '@/lib/utils';
+import { liveApi } from '@/services/liveApi';
 
 export default function AgentWorkspacePage() {
-  const [activeTab, setActiveTab] = useState<'replay' | 'terminal' | 'diff' | 'task'>('replay');
-  const agent = DEMO_AGENTS[0]; // Claude 3.7 Sonnet Backend Agent
-  const task = DEMO_TASKS[0];
+  const [activeTab, setActiveTab] = useState<'replay' | 'terminal' | 'diff'>('replay');
+  const [agent, setAgent] = useState<any>(null);
+  const [task, setTask] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.allSettled([liveApi.getAgents(), liveApi.getTasks()])
+      .then(([agentRes, taskRes]) => {
+        if (agentRes.status === 'fulfilled' && agentRes.value && agentRes.value.length > 0) {
+          setAgent(agentRes.value[0]);
+        }
+        if (taskRes.status === 'fulfilled' && taskRes.value && taskRes.value.length > 0) {
+          setTask(taskRes.value[0]);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
@@ -39,13 +53,17 @@ export default function AgentWorkspacePage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-[#f1f5f9]">{agent.name}</h1>
-              <Badge variant="warning" dot>
-                Waiting for Approval
-              </Badge>
-              <Badge variant="outline">{agent.model}</Badge>
+              <h1 className="text-xl font-bold text-[#f1f5f9]">{agent ? agent.name : 'Agent Workspace'}</h1>
+              {agent && (
+                <Badge variant={agent.status === 'RUNNING' ? 'success' : 'warning'} dot>
+                  {agent.status}
+                </Badge>
+              )}
+              {agent && <Badge variant="outline">{agent.model || 'Direct API'}</Badge>}
             </div>
-            <p className="text-xs text-[#94a3b8] mt-0.5">{task.title}</p>
+            <p className="text-xs text-[#94a3b8] mt-0.5">
+              {task ? task.title : 'No active autonomous task dispatched.'}
+            </p>
           </div>
         </div>
 
@@ -63,25 +81,25 @@ export default function AgentWorkspacePage() {
         <div className="p-3 rounded-lg bg-[#0f1416] border border-[#1c2529]">
           <div className="text-[10px] font-mono text-[#64748b]">EXECUTION ENVIRONMENT</div>
           <div className="font-semibold text-[#f1f5f9] mt-1 flex items-center gap-1.5">
-            <Cpu className="h-3.5 w-3.5 text-[#10b981]" /> Ephemeral Cloud Container
+            <Cpu className="h-3.5 w-3.5 text-[#10b981]" /> {agent?.executionMode || 'CLOUD'} Container
           </div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f1416] border border-[#1c2529]">
-          <div className="text-[10px] font-mono text-[#64748b]">FILES TOUCHED &amp; DIFF</div>
+          <div className="text-[10px] font-mono text-[#64748b]">ACTIVE BRANCH</div>
           <div className="font-semibold text-[#34d399] mt-1 font-mono">
-            3 files (+142 -38)
+            {task?.branch || 'main'}
           </div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f1416] border border-[#1c2529]">
-          <div className="text-[10px] font-mono text-[#64748b]">TEST VERIFICATION</div>
-          <div className="font-semibold text-[#10b981] mt-1 flex items-center gap-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5" /> 24 passed (0 failed)
+          <div className="text-[10px] font-mono text-[#64748b]">COMMIT REF</div>
+          <div className="font-semibold text-[#10b981] mt-1 flex items-center gap-1.5 font-mono">
+            <CheckCircle2 className="h-3.5 w-3.5" /> {task?.commitSha || 'HEAD'}
           </div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f1416] border border-[#1c2529]">
-          <div className="text-[10px] font-mono text-[#64748b]">TASK COST (BYOK)</div>
+          <div className="text-[10px] font-mono text-[#64748b]">PROVIDER RUNTIME</div>
           <div className="font-semibold text-[#f1f5f9] mt-1 font-mono">
-            {formatCurrency(0.18)} (14.2k tokens)
+            {agent?.provider || 'BYOK Relay'}
           </div>
         </div>
       </div>

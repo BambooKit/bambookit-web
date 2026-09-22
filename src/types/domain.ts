@@ -34,7 +34,7 @@ export type PermissionCategory =
   | 'deployment'
   | 'production';
 
-export type ProviderId = 'anthropic' | 'openai' | 'google' | 'openrouter' | 'local' | 'custom';
+export type ProviderId = 'anthropic' | 'openai' | 'google' | 'openrouter' | 'local' | 'custom' | 'opencode' | 'kilo';
 
 export type ExecutionEnvironment = 'local' | 'cloud' | 'hybrid';
 

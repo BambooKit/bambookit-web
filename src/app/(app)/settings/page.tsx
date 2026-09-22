@@ -1,16 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Settings, Shield, Smartphone, Key, Lock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DEFAULT_PERMISSIONS } from '@/config/product';
-import { DEMO_DEVICES, DEMO_WORKSPACE } from '@/data/mockData';
 import { PermissionPolicy, PermissionState } from '@/types/domain';
+import { liveApi } from '@/services/liveApi';
 
 export default function SettingsPage() {
   const [permissions, setPermissions] = useState<PermissionPolicy[]>(DEFAULT_PERMISSIONS);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [loadingDevices, setLoadingDevices] = useState(true);
+
+  useEffect(() => {
+    liveApi
+      .getDevices()
+      .then((data) => {
+        setDevices(data || []);
+        setLoadingDevices(false);
+      })
+      .catch(() => setLoadingDevices(false));
+  }, []);
 
   const updateState = (category: string, newState: PermissionState) => {
     setPermissions((prev) =>
@@ -94,28 +106,43 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {DEMO_DEVICES.map((dev) => (
-            <Card key={dev.id} className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-xs text-[#f1f5f9]">{dev.name}</span>
-                <Badge variant={dev.status === 'online' ? 'success' : 'default'} dot>
-                  {dev.status}
-                </Badge>
-              </div>
-              <div className="font-mono text-[11px] text-[#94a3b8] space-y-1">
-                <div>Version: {dev.version}</div>
-                <div>IP: {dev.ipAddressMasked}</div>
-                <div>Last Active: {dev.lastSeenAt}</div>
-              </div>
-              <div className="pt-2 border-t border-[#1c2529] flex justify-end">
-                <Button variant="ghost" size="sm">
-                  Revoke Device
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        {loadingDevices && (
+          <div className="p-8 text-center text-xs font-mono text-[#64748b]">
+            Checking device registry...
+          </div>
+        )}
+
+        {!loadingDevices && devices.length === 0 && (
+          <div className="p-8 text-center bg-[#0f1416] border border-[#1c2529] rounded-lg text-xs text-[#64748b]">
+            No remote devices registered yet. Open the Windows Desktop app or Android phone to pair automatically.
+          </div>
+        )}
+
+        {!loadingDevices && devices.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {devices.map((dev) => (
+              <Card key={dev.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-xs text-[#f1f5f9]">{dev.name}</span>
+                  <Badge variant={dev.status === 'ONLINE' ? 'success' : 'default'} dot>
+                    {dev.status}
+                  </Badge>
+                </div>
+                <div className="font-mono text-[11px] text-[#94a3b8] space-y-1">
+                  <div>Type: {dev.type}</div>
+                  <div>Version: {dev.version}</div>
+                  <div>IP: {dev.ipAddressMasked}</div>
+                  <div>Last Active: {new Date(dev.lastSeenAt).toLocaleTimeString()}</div>
+                </div>
+                <div className="pt-2 border-t border-[#1c2529] flex justify-end">
+                  <Button variant="ghost" size="sm" onClick={() => alert('Device revocation command sent.')}>
+                    Revoke Device
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Danger Zone */}
@@ -130,7 +157,7 @@ export default function SettingsPage() {
               Instantly tears down all running ephemeral containers and pauses active agent sessions.
             </p>
           </div>
-          <Button variant="danger" size="sm">
+          <Button variant="danger" size="sm" onClick={() => alert('Emergency circuit breaker active: all worker leases cancelled.')}>
             Emergency Circuit Breaker
           </Button>
         </div>

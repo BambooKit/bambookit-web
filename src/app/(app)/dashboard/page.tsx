@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Bot,
@@ -14,23 +16,56 @@ import {
   Sparkles,
   Smartphone,
   Rocket,
+  Plus,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import {
-  DEMO_PROJECTS,
-  DEMO_AGENTS,
-  DEMO_APPROVALS,
-  DEMO_DEPLOYMENTS,
-  DEMO_USAGE,
-  DEMO_DEVICES,
-} from '@/data/mockData';
+import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
+import { liveApi } from '@/services/liveApi';
 import { formatCurrency } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const activeAgents = DEMO_AGENTS.filter((a) => a.status === 'running' || a.status === 'waiting');
-  const pendingApprovals = DEMO_APPROVALS.filter((a) => a.status === 'pending');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<any[]>([]);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [deployments, setDeployments] = useState<any[]>([]);
+  const [usage, setUsage] = useState<any>(null);
+
+  useEffect(() => {
+    Promise.allSettled([
+      liveApi.getProjects(),
+      liveApi.getTasks(),
+      liveApi.getAgents(),
+      liveApi.getApprovals(),
+      liveApi.getDevices(),
+      liveApi.getDeployments(),
+      liveApi.getUsage(),
+    ])
+      .then(([projRes, taskRes, agentRes, apprRes, devRes, depRes, usgRes]) => {
+        if (projRes.status === 'fulfilled') setProjects(projRes.value || []);
+        if (taskRes.status === 'fulfilled') setTasks(taskRes.value || []);
+        if (agentRes.status === 'fulfilled') setAgents(agentRes.value || []);
+        if (apprRes.status === 'fulfilled') setApprovals(apprRes.value || []);
+        if (devRes.status === 'fulfilled') setDevices(devRes.value || []);
+        if (depRes.status === 'fulfilled') setDeployments(depRes.value || []);
+        if (usgRes.status === 'fulfilled') setUsage(usgRes.value || null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  const activeAgents = agents.filter((a) => a.status === 'RUNNING' || a.status === 'WAITING_FOR_APPROVAL');
+  const pendingApprovals = approvals.filter((a) => a.status === 'PENDING');
+  const runningTasks = tasks.filter((t) => t.status === 'RUNNING' || t.status === 'WAITING_FOR_APPROVAL');
+  const spotlightTask = runningTasks[0] || tasks[0] || null;
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
@@ -39,20 +74,34 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-[#f1f5f9]">Control Plane Overview</h1>
           <p className="text-xs text-[#94a3b8] mt-0.5">
-            Real-time status across active agent workers, pending approvals, and connected devices.
+            Real-time telemetry and state synchronized with the BambooKit API Control Plane.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="success" dot>
-            2 Active Workers
+          <Badge variant={activeAgents.length > 0 ? 'success' : 'default'} dot={activeAgents.length > 0}>
+            {activeAgents.length} Active {activeAgents.length === 1 ? 'Worker' : 'Workers'}
           </Badge>
-          <Link href="/agents/agent_backend_sonnet">
-            <Button size="sm" variant="primary">
-              <Play className="h-3.5 w-3.5 mr-1" /> Inspect Running Task
-            </Button>
-          </Link>
+          {spotlightTask ? (
+            <Link href="/agents">
+              <Button size="sm" variant="primary">
+                <Play className="h-3.5 w-3.5 mr-1" /> Inspect Task
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/projects">
+              <Button size="sm" variant="primary">
+                <Plus className="h-3.5 w-3.5 mr-1" /> New Project
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
+
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
+          Control Plane connection issue: {error}
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -62,7 +111,9 @@ export default function DashboardPage() {
             <Bot className="h-4 w-4 text-[#10b981]" />
           </div>
           <div className="text-2xl font-bold font-mono text-[#f1f5f9] mt-2">{activeAgents.length}</div>
-          <div className="text-[10px] text-[#64748b] mt-1">Claude 3.7 &amp; Gemini 2.5 active</div>
+          <div className="text-[10px] text-[#64748b] mt-1">
+            {activeAgents.length === 0 ? 'No agents currently running' : `${activeAgents.length} connected to cluster`}
+          </div>
         </Card>
 
         <Card>
@@ -71,7 +122,9 @@ export default function DashboardPage() {
             <ShieldAlert className="h-4 w-4 text-[#f59e0b]" />
           </div>
           <div className="text-2xl font-bold font-mono text-[#fbbf24] mt-2">{pendingApprovals.length}</div>
-          <div className="text-[10px] text-[#f59e0b] mt-1">Requires human verification</div>
+          <div className="text-[10px] text-[#f59e0b] mt-1">
+            {pendingApprovals.length === 0 ? 'Zero pending gates' : 'Requires human verification'}
+          </div>
         </Card>
 
         <Card>
@@ -79,8 +132,10 @@ export default function DashboardPage() {
             <span>ACTIVE PROJECTS</span>
             <FolderGit2 className="h-4 w-4 text-[#06b6d4]" />
           </div>
-          <div className="text-2xl font-bold font-mono text-[#f1f5f9] mt-2">{DEMO_PROJECTS.length}</div>
-          <div className="text-[10px] text-[#64748b] mt-1">All repositories synchronized</div>
+          <div className="text-2xl font-bold font-mono text-[#f1f5f9] mt-2">{projects.length}</div>
+          <div className="text-[10px] text-[#64748b] mt-1">
+            {projects.length === 0 ? 'No registered repositories' : 'Synchronized in database'}
+          </div>
         </Card>
 
         <Card>
@@ -89,9 +144,11 @@ export default function DashboardPage() {
             <Coins className="h-4 w-4 text-[#34d399]" />
           </div>
           <div className="text-2xl font-bold font-mono text-[#f1f5f9] mt-2">
-            {formatCurrency(DEMO_USAGE.aiCostEstUsd)}
+            {usage ? formatCurrency(parseFloat(usage.estimatedCostUsd || '0')) : '$0.00'}
           </div>
-          <div className="text-[10px] text-[#64748b] mt-1">58% of $75 budget cap</div>
+          <div className="text-[10px] text-[#64748b] mt-1">
+            {usage ? `${usage.percentBudgetUsed || 0}% of $${usage.budgetCapUsd || '75'} budget cap` : 'No usage recorded yet'}
+          </div>
         </Card>
       </div>
 
@@ -105,49 +162,59 @@ export default function DashboardPage() {
                 <Terminal className="h-4 w-4 text-[#10b981]" />
                 <span className="font-semibold text-xs text-[#f1f5f9]">Live Agent Execution Stream</span>
               </div>
-              <Badge variant="warning" dot>
-                Waiting for Human Approval
-              </Badge>
+              {spotlightTask && (
+                <Badge variant={spotlightTask.status === 'WAITING_FOR_APPROVAL' ? 'warning' : 'success'} dot>
+                  {spotlightTask.status.replace(/_/g, ' ')}
+                </Badge>
+              )}
             </div>
 
-            <div className="p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs font-semibold text-[#f1f5f9]">
-                    Backend Agent (Claude 3.7 Sonnet)
+            {spotlightTask ? (
+              <div className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-[#f1f5f9]">
+                      Agent: {spotlightTask.agentId || 'Autonomous Worker'}
+                    </div>
+                    <div className="text-[11px] text-[#94a3b8] mt-0.5">
+                      Task: {spotlightTask.title}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-[#94a3b8] mt-0.5">
-                    Task: Add Google authentication and session callback flow
-                  </div>
+                  <Link href={`/agents`}>
+                    <Button variant="outline" size="sm">
+                      Open Full Workspace <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                    </Button>
+                  </Link>
                 </div>
-                <Link href="/agents/agent_backend_sonnet">
-                  <Button variant="outline" size="sm">
-                    Open Full Workspace <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                  </Button>
-                </Link>
-              </div>
 
-              {/* Mini Terminal Execution Snippet */}
-              <div className="p-3 bg-[#080b0c] border border-[#1c2529] rounded font-mono text-[11px] space-y-1 text-[#94a3b8]">
-                <div className="text-[#64748b]">&gt; git checkout -b feat/google-auth</div>
-                <div className="text-[#34d399]">+ Modified src/lib/auth.ts (+46, -12)</div>
-                <div className="text-[#34d399]">+ Created src/app/api/auth/[...nextauth]/route.ts</div>
-                <div className="text-[#10b981]">✓ 24 tests passed across 4 test suites</div>
-                <div className="text-[#f59e0b]">! Gate triggered: Deployment to Production requires approval</div>
-              </div>
+                <div className="p-3 bg-[#080b0c] border border-[#1c2529] rounded font-mono text-[11px] space-y-1 text-[#94a3b8]">
+                  <div className="text-[#64748b]">&gt; Branch: {spotlightTask.branch || 'main'} • Ref: {spotlightTask.commitSha || 'HEAD'}</div>
+                  <div className="text-[#34d399]">Mode: {spotlightTask.executionMode || 'CLOUD'}</div>
+                  {spotlightTask.prompt && (
+                    <div className="text-[#cbd5e1] line-clamp-2 mt-1">Prompt: {spotlightTask.prompt}</div>
+                  )}
+                </div>
 
-              {/* Action Banner */}
-              <div className="p-3 bg-[#13100a] border border-[#f59e0b]/30 rounded flex items-center justify-between text-xs">
-                <span className="text-[#fbbf24]">
-                  Deploy commit <code>8f31c2a</code> to live production cluster?
-                </span>
-                <Link href="/approvals">
-                  <Button variant="primary" size="sm">
-                    Review Approval
-                  </Button>
-                </Link>
+                {pendingApprovals.length > 0 && (
+                  <div className="p-3 bg-[#13100a] border border-[#f59e0b]/30 rounded flex items-center justify-between text-xs">
+                    <span className="text-[#fbbf24]">
+                      {pendingApprovals[0].action} requires human authorization
+                    </span>
+                    <Link href="/approvals">
+                      <Button variant="primary" size="sm">
+                        Review Approval
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="p-10 text-center text-xs text-[#64748b] space-y-2">
+                <Terminal className="h-6 w-6 mx-auto text-[#64748b]" />
+                <div className="text-[#f1f5f9] font-medium">No tasks currently executing</div>
+                <p>Dispatch a task from a project workspace to stream live autonomous execution.</p>
+              </div>
+            )}
           </Card>
 
           {/* Connected Projects */}
@@ -155,27 +222,33 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between text-xs text-[#94a3b8]">
               <span className="font-mono uppercase tracking-wider">Active Projects</span>
               <Link href="/projects" className="text-[#10b981] hover:underline">
-                View all ({DEMO_PROJECTS.length})
+                View all ({projects.length})
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {DEMO_PROJECTS.map((proj) => (
-                <Link key={proj.id} href={`/projects/${proj.id}`}>
-                  <Card hoverable className="p-3.5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-[#f1f5f9]">{proj.name}</span>
-                      <Badge variant="outline">{proj.environment}</Badge>
-                    </div>
-                    <p className="text-[11px] text-[#94a3b8] line-clamp-1">{proj.description}</p>
-                    <div className="flex items-center justify-between text-[10px] font-mono text-[#64748b] pt-1 border-t border-[#1c2529]">
-                      <span>{proj.repository.branch}</span>
-                      <span>{proj.activeAgentsCount} agents active</span>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+            {projects.length === 0 ? (
+              <div className="p-8 text-center bg-[#0f1416] border border-[#1c2529] rounded-lg text-xs text-[#64748b]">
+                No projects registered yet. Register a local folder via Desktop Connector or add one from Projects page.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {projects.slice(0, 4).map((proj) => (
+                  <Link key={proj.id} href={`/projects/${proj.id}`}>
+                    <Card hoverable className="p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-[#f1f5f9]">{proj.name}</span>
+                        <Badge variant="outline">{proj.executionMode || 'CLOUD'}</Badge>
+                      </div>
+                      <p className="text-[11px] text-[#94a3b8] line-clamp-1">{proj.description || 'No description'}</p>
+                      <div className="flex items-center justify-between text-[10px] font-mono text-[#64748b] pt-1 border-t border-[#1c2529]">
+                        <span>{proj.defaultBranch || 'main'}</span>
+                        <span>{proj.status || 'ACTIVE'}</span>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -188,25 +261,32 @@ export default function DashboardPage() {
                 <ShieldAlert className="h-4 w-4 text-[#f59e0b]" /> Pending Approvals
               </CardTitle>
             </CardHeader>
-            <div className="space-y-3">
-              {pendingApprovals.map((appr) => (
-                <div key={appr.id} className="p-3 rounded bg-[#0a0d0e] border border-[#1c2529] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-xs text-[#f1f5f9]">{appr.action}</span>
-                    <Badge variant="warning">{appr.risk}</Badge>
+            {pendingApprovals.length === 0 ? (
+              <div className="p-4 text-center text-xs text-[#64748b]">
+                <CheckCircle2 className="h-5 w-5 text-[#10b981] mx-auto mb-1" />
+                No pending approval gates.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingApprovals.map((appr) => (
+                  <div key={appr.id} className="p-3 rounded bg-[#0a0d0e] border border-[#1c2529] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-[#f1f5f9]">{appr.action}</span>
+                      <Badge variant="warning">{appr.riskLevel || 'HIGH'}</Badge>
+                    </div>
+                    <p className="text-[11px] text-[#94a3b8]">{appr.reason}</p>
+                    <div className="pt-1 flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-[#64748b]">{appr.agentId || 'Agent'}</span>
+                      <Link href="/approvals">
+                        <Button variant="outline" size="sm">
+                          Inspect
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-[#94a3b8]">{appr.reason}</p>
-                  <div className="pt-1 flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-[#64748b]">{appr.agentName}</span>
-                    <Link href="/approvals">
-                      <Button variant="outline" size="sm">
-                        Inspect
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           {/* Recent Deployments */}
@@ -216,22 +296,28 @@ export default function DashboardPage() {
                 <Rocket className="h-4 w-4 text-[#10b981]" /> Live Deployments
               </CardTitle>
             </CardHeader>
-            <div className="space-y-2.5 text-xs">
-              {DEMO_DEPLOYMENTS.map((dep) => (
-                <div key={dep.id} className="p-2.5 rounded bg-[#0a0d0e] border border-[#1c2529] space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#f1f5f9]">{dep.projectName}</span>
-                    <Badge variant="success">Live ({dep.durationSeconds}s)</Badge>
+            {deployments.length === 0 ? (
+              <div className="p-4 text-center text-xs text-[#64748b]">
+                No deployments recorded yet.
+              </div>
+            ) : (
+              <div className="space-y-2.5 text-xs">
+                {deployments.slice(0, 3).map((dep) => (
+                  <div key={dep.id} className="p-2.5 rounded bg-[#0a0d0e] border border-[#1c2529] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#f1f5f9]">{dep.environment}</span>
+                      <Badge variant="success">Ready ({dep.durationSeconds || 0}s)</Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#64748b]">
+                      <GitCommit className="h-3 w-3" />
+                      <span>{dep.commitSha || 'HEAD'}</span>
+                      <span>•</span>
+                      <span className="truncate">{dep.commitMessage || 'Deployment'}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#64748b]">
-                    <GitCommit className="h-3 w-3" />
-                    <span>{dep.commitSha}</span>
-                    <span>•</span>
-                    <span className="truncate">{dep.commitMessage}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           {/* Connected Devices */}
@@ -241,19 +327,25 @@ export default function DashboardPage() {
                 <Smartphone className="h-4 w-4 text-[#06b6d4]" /> Remote Control Devices
               </CardTitle>
             </CardHeader>
-            <div className="space-y-2 text-xs">
-              {DEMO_DEVICES.map((dev) => (
-                <div key={dev.id} className="flex items-center justify-between p-2 rounded bg-[#0a0d0e] border border-[#1c2529]">
-                  <div>
-                    <div className="text-[#f1f5f9] font-medium">{dev.name}</div>
-                    <div className="text-[10px] font-mono text-[#64748b]">{dev.version}</div>
+            {devices.length === 0 ? (
+              <div className="p-4 text-center text-xs text-[#64748b]">
+                No remote devices connected.
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs">
+                {devices.map((dev) => (
+                  <div key={dev.id} className="flex items-center justify-between p-2 rounded bg-[#0a0d0e] border border-[#1c2529]">
+                    <div>
+                      <div className="text-[#f1f5f9] font-medium">{dev.name}</div>
+                      <div className="text-[10px] font-mono text-[#64748b]">{dev.version}</div>
+                    </div>
+                    <Badge variant={dev.status === 'ONLINE' ? 'success' : 'default'} dot>
+                      {dev.status}
+                    </Badge>
                   </div>
-                  <Badge variant={dev.status === 'online' ? 'success' : 'default'} dot>
-                    {dev.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>

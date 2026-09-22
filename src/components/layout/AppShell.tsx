@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -24,17 +24,58 @@ import {
   Layers,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { DEMO_WORKSPACE, DEMO_USER } from '@/data/mockData';
+import { liveApi } from '@/services/liveApi';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ name: string; email: string } | null>(null);
+  const [workspaceInfo, setWorkspaceInfo] = useState<{ name: string; tier: string } | null>(null);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState<number>(0);
+  const [activeAgentsCount, setActiveAgentsCount] = useState<number>(0);
+
+  useEffect(() => {
+    liveApi
+      .getMe()
+      .then((data) => {
+        if (data?.user) setUserInfo(data.user);
+        if (data?.workspace) setWorkspaceInfo(data.workspace);
+      })
+      .catch(() => {});
+
+    liveApi
+      .getApprovals()
+      .then((approvals) => {
+        const pending = (approvals || []).filter((a: any) => a.status === 'PENDING');
+        setPendingApprovalsCount(pending.length);
+      })
+      .catch(() => {});
+
+    liveApi
+      .getAgents()
+      .then((agents) => {
+        const active = (agents || []).filter((a: any) => a.status === 'RUNNING' || a.status === 'WAITING_FOR_APPROVAL');
+        setActiveAgentsCount(active.length);
+      })
+      .catch(() => {});
+  }, []);
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Projects', href: '/projects', icon: FolderGit2 },
-    { label: 'Agents', href: '/agents', icon: Bot, badge: '2 Active' },
-    { label: 'Approvals', href: '/approvals', icon: ShieldCheck, badgeVariant: 'warning' as const, badge: '1 Action' },
+    {
+      label: 'Agents',
+      href: '/agents',
+      icon: Bot,
+      badge: activeAgentsCount > 0 ? `${activeAgentsCount} Active` : undefined,
+    },
+    {
+      label: 'Approvals',
+      href: '/approvals',
+      icon: ShieldCheck,
+      badgeVariant: 'warning' as const,
+      badge: pendingApprovalsCount > 0 ? `${pendingApprovalsCount} Action` : undefined,
+    },
     { label: 'Activity', href: '/activity', icon: Activity },
     { label: 'Deployments', href: '/deployments', icon: Rocket },
     { label: 'Providers (BYOK)', href: '/providers', icon: KeyRound },
@@ -78,8 +119,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Layers className="h-4 w-4" />
               </div>
               <div className="truncate">
-                <div className="font-semibold text-xs text-[#f1f5f9] truncate">{DEMO_WORKSPACE.name}</div>
-                <div className="text-[10px] font-mono text-[#64748b] uppercase">Plan: {DEMO_WORKSPACE.tier}</div>
+                <div className="font-semibold text-xs text-[#f1f5f9] truncate">
+                  {workspaceInfo?.name || "Satyam's Workspace"}
+                </div>
+                <div className="text-[10px] font-mono text-[#64748b] uppercase">
+                  Plan: {workspaceInfo?.tier || 'PRO'}
+                </div>
               </div>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-[#64748b]" />
@@ -128,16 +173,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center justify-between px-2 pt-1 border-t border-[#1c2529]/60">
             <div className="flex items-center gap-2 truncate">
-              <div className="h-6 w-6 rounded-full bg-[#151b1e] border border-[#1c2529] flex items-center justify-center font-mono font-semibold text-[10px] text-[#10b981]">
-                S
+              <div className="h-6 w-6 rounded-full bg-[#4285F4] flex items-center justify-center font-bold text-[11px] text-white">
+                G
               </div>
               <div className="truncate">
-                <div className="text-[11px] font-medium text-[#f1f5f9] truncate">{DEMO_USER.name}</div>
-                <div className="text-[9px] text-[#64748b] font-mono">{DEMO_USER.email}</div>
+                <div className="text-[11px] font-medium text-[#f1f5f9] truncate">
+                  {userInfo?.name || 'Satyam Pote'}
+                </div>
+                <div className="text-[9px] text-[#38bdf8] font-mono truncate">
+                  {userInfo?.email || 'satyampote9999@gmail.com'}
+                </div>
               </div>
             </div>
-            <Link href="/" className="text-[10px] text-[#64748b] hover:text-[#f1f5f9]">
-              Exit
+            <Link href="/login" className="text-[10px] text-[#64748b] hover:text-[#f1f5f9]">
+              Logout
             </Link>
           </div>
         </div>

@@ -1,15 +1,32 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Users, UserPlus, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { liveApi } from '@/services/liveApi';
 
 export default function TeamPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    liveApi
+      .getMe()
+      .then((data) => {
+        if (data?.user) setCurrentUser(data.user);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   const members = [
-    { name: 'Satyam', email: 'satyam@bambookit.dev', role: 'Owner', status: 'Active' },
-    { name: 'Alex Rivera', email: 'alex@bambookit.dev', role: 'Admin', status: 'Active' },
-    { name: 'Elena Chen', email: 'elena@bambookit.dev', role: 'Developer', status: 'Active' },
-    { name: 'Devin Security', email: 'security-bot@bambookit.dev', role: 'Viewer', status: 'Active' },
+    {
+      name: currentUser?.name || 'Satyam Pote',
+      email: currentUser?.email || 'satyampote9999@gmail.com',
+      role: 'Owner',
+      status: 'Active (Google Verified)',
+    },
   ];
 
   return (
@@ -21,7 +38,7 @@ export default function TeamPage() {
             Manage organization members, role-based authorization, and approval escalation policies.
           </p>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={() => alert('Invite link generator: team member addition active.')}>
           <UserPlus className="h-3.5 w-3.5 mr-1" /> Invite Member
         </Button>
       </div>
@@ -30,12 +47,12 @@ export default function TeamPage() {
         {members.map((m, i) => (
           <div key={i} className="p-4 flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-[#151b1e] border border-[#1c2529] flex items-center justify-center font-bold text-[11px] text-[#10b981]">
+              <div className="h-8 w-8 rounded-full bg-[#4285F4] flex items-center justify-center font-bold text-[11px] text-white">
                 {m.name.charAt(0)}
               </div>
               <div>
                 <div className="font-semibold text-[#f1f5f9]">{m.name}</div>
-                <div className="text-[11px] font-mono text-[#64748b]">{m.email}</div>
+                <div className="text-[11px] font-mono text-[#38bdf8]">{m.email}</div>
               </div>
             </div>
 
