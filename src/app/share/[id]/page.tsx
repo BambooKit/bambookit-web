@@ -4,7 +4,11 @@ import { SiteHeader } from "@/components/site/Chrome";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Shared session", robots: { index: false } };
 
-const API = (process.env.BAMBOOKIT_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
+const API = (
+  process.env.BAMBOOKIT_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production" ? "https://bambookit-api.onrender.com" : "http://localhost:8080")
+).replace(/\/+$/, "");
 
 type Item = { type: string; data: any };
 

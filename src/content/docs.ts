@@ -25,6 +25,95 @@ BambooKit is an AI coding workspace for Windows with a companion Android app.
 `,
   },
   {
+    slug: "how-it-works",
+    title: "How BambooKit works",
+    section: "Get started",
+    body: `
+BambooKit has four parts. Only the engine and your project files live on your PC.
+
+| Part | Where it runs | What it does |
+|---|---|---|
+| **BambooKit Desktop** | Your Windows PC | The app you work in: chat, agents, files, diffs, terminal, Git, MCP, models |
+| **Agent engine** | Inside BambooKit Desktop, on 127.0.0.1 | Runs the AI agent, its tools and its permission rules. It is built from the open-source OpenCode project (MIT) and branded BambooKit. |
+| **BambooKit API** | [bambookit-api.onrender.com](https://bambookit-api.onrender.com/health) | Sign-in check, devices, QR pairing, session list, remote commands, approvals, live updates, shared sessions |
+| **BambooKit Web** | [bambookit-web.onrender.com](https://bambookit-web.onrender.com) | This site: install, docs, shared-session pages |
+
+**BambooKit Android** talks only to the BambooKit API; the API forwards your actions to the Desktop, and the Desktop asks the engine to do them.
+
+## Where models come from
+
+- **Free BambooKit models** are served by the engine's built-in free model service. No key is needed.
+- **Your own keys** (OpenAI, Anthropic, Google and others) are stored by the engine on your PC and used directly from your PC.
+
+The BambooKit API never sees model keys or model traffic.
+
+## What the hosted API stores
+
+Account id and email, device names and public keys, project names and folders, session titles and status, chat text, tool names and changed-file names. Never your source files, unless you open a diff on your phone or publish a share.
+
+## The hosted API on the free plan
+
+The API sleeps after about 15 minutes without traffic; the first request after that takes 20-50 seconds while it wakes. BambooKit Desktop keeps it awake while it is running, and a scheduled ping keeps it awake the rest of the time.
+`,
+  },
+  {
+    slug: "sign-in",
+    title: "Accounts and sign-in",
+    section: "Get started",
+    body: `
+Use the **same account** on BambooKit Desktop and BambooKit Android. Two ways to sign in:
+
+| Method | Notes |
+|---|---|
+| Email and password | Create the account in the app, confirm the email, then sign in |
+| Google (Gmail) | Uses Google sign-in through Firebase |
+
+An email/password account and a Google account are **separate accounts**, even with the same address. Pick one and use it on both devices; pairing only works within one account.
+
+## If Google sign-in shows "auth/configuration-not-found"
+
+Google sign-in is not enabled for the BambooKit Firebase project yet. The project owner enables it once:
+
+1. Open the [Firebase console](https://console.firebase.google.com) → project **bambookit-product** → **Authentication** → **Get started**.
+2. **Sign-in method** → **Google** → **Enable** → choose a support email → **Save**.
+3. **Settings → Authorized domains**: keep \`localhost\`.
+4. In Supabase → **Authentication → Third-party auth** → **Add Firebase** with project id \`bambookit-product\`.
+
+Until then, use email and password.
+`,
+  },
+  {
+    slug: "sessions",
+    title: "Sessions",
+    section: "Use BambooKit",
+    body: `
+A **session** is one conversation with the agent in one project.
+
+## Which sessions you see
+
+| Source | Shown in BambooKit? |
+|---|---|
+| Sessions you start in BambooKit Desktop | Yes |
+| Sessions you start from your phone | Yes, they run on your PC |
+| Sessions created on the same PC by the OpenCode CLI, TUI or OpenCode IDE extensions | Yes, they share the engine's session store on your PC |
+| VS Code Copilot Chat, Claude Code, Cursor, Antigravity agent sessions | No, those are different products with their own storage |
+
+## Where they are stored
+
+- The full history (messages, tool calls, snapshots) stays in the engine's store on your PC.
+- The BambooKit API keeps a lightweight copy for your phone: titles, status, recent messages and changed-file summaries.
+
+## Statuses
+
+| Status | Meaning |
+|---|---|
+| Working | The agent is running |
+| Retrying | The model provider failed and the agent is retrying |
+| Error | The last run failed; the message explains why |
+| Idle | Waiting for your next message |
+`,
+  },
+  {
     slug: "install",
     title: "Install",
     section: "Get started",
@@ -207,13 +296,14 @@ These files hold public settings only. Never put a private key or service-role k
 | \`FIREBASE_PROJECT_ID\` | Firebase project used for Google sign-in |
 | \`DATABASE_PATH\` | SQLite file, default \`./data/bambookit.db\` |
 | \`PUBLIC_SHARE_BASE_URL\` | Origin used in share links, e.g. \`https://bambookit-web.onrender.com\` |
+| \`POSTGRES_URL\` | Postgres connection string (Supabase). Required on Render, whose disk is wiped on restart |
 | \`CORS_ORIGINS\` | Allowed browser origins |
 
 ## Desktop — \`opencode-bambookit/packages/desktop/.env.bambookit\`
 
 | Variable | Purpose |
 |---|---|
-| \`BAMBOOKIT_API_URL\` | API address (\`http://localhost:8080\` for local) |
+| \`BAMBOOKIT_API_URL\` | API address: \`https://bambookit-api.onrender.com\` (hosted) or \`http://localhost:8080\` (local) |
 | \`BAMBOOKIT_SUPABASE_URL\`, \`BAMBOOKIT_SUPABASE_ANON_KEY\` | Sign-in |
 | \`BAMBOOKIT_FIREBASE_API_KEY\`, \`BAMBOOKIT_FIREBASE_PROJECT_ID\`, \`BAMBOOKIT_FIREBASE_AUTH_DOMAIN\` | Google sign-in |
 

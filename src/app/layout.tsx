@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://bambookit-web.onrender.com"),
   title: { default: "BambooKit — AI coding on your PC, controlled from your phone", template: "%s · BambooKit" },
   description:
     "BambooKit is an AI software-engineering workspace for Windows with a phone remote: chat with agents, review diffs, approve commands and stop or continue work from anywhere.",
