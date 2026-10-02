@@ -1,47 +1,103 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --bg-main: #0a0d0e;
-    --bg-surface: #0f1416;
-    --bg-surface-elevated: #151b1e;
-    --bg-surface-hover: #1b2327;
-    
-    --border-subtle: #1c2529;
-    --border-strong: #27343a;
-    
-    --bamboo-50: #ecfdf5;
-    --bamboo-400: #34d399;
-    --bamboo-500: #10b981;
-    --bamboo-600: #059669;
-    
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-  }
-
-  body {
-    background-color: #0a0d0e;
-    color: #f1f5f9;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
-  }
-
-  /* Custom scrollbar for dense developer views */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0a0d0e;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #1c2529;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #27343a;
-  }
+/* BambooKit brand: #121212 ground, #E5EDD5 bamboo. */
+@theme {
+  --color-bk-bg: #121212;
+  --color-bk-panel: #181a17;
+  --color-bk-raised: #1f221d;
+  --color-bk-line: #2a2e27;
+  --color-bk-fg: #e5edd5;
+  --color-bk-muted: #a7b09c;
+  --color-bk-faint: #6e7767;
+  --color-bk-accent: #e5edd5;
+  --color-bk-ok: #9fd39a;
+  --color-bk-err: #ef8a80;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
+
+html {
+  background: var(--color-bk-bg);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bk-bg);
+  color: var(--color-bk-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+::selection {
+  background: #e5edd533;
+}
+
+.prose-bk h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 2.25rem 0 0.75rem;
+  color: var(--color-bk-fg);
+}
+.prose-bk h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.5rem;
+}
+.prose-bk p,
+.prose-bk li {
+  color: var(--color-bk-muted);
+  line-height: 1.75;
+}
+.prose-bk p {
+  margin: 0.75rem 0;
+}
+.prose-bk ul,
+.prose-bk ol {
+  margin: 0.75rem 0 0.75rem 1.25rem;
+}
+.prose-bk ul {
+  list-style: disc;
+}
+.prose-bk ol {
+  list-style: decimal;
+}
+.prose-bk a {
+  color: var(--color-bk-fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-bk code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-bk-raised);
+  border: 1px solid var(--color-bk-line);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  color: var(--color-bk-fg);
+}
+.prose-bk table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.prose-bk th,
+.prose-bk td {
+  text-align: left;
+  border-bottom: 1px solid var(--color-bk-line);
+  padding: 0.5rem 0.6rem;
+  vertical-align: top;
+}
+.prose-bk th {
+  color: var(--color-bk-fg);
+  font-weight: 600;
+}
+.prose-bk td {
+  color: var(--color-bk-muted);
+}
+
+.prose-bk pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+

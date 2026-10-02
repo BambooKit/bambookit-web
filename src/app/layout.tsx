@@ -1,34 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BambooKit — The AI Agent Control Plane",
+  title: { default: "BambooKit — AI coding on your PC, controlled from your phone", template: "%s · BambooKit" },
   description:
-    "Control autonomous coding agents from anywhere—web, mobile, and desktop. BambooKit provides the execution environment, permissions, approvals, observability, and persistence.",
-  keywords: [
-    "AI Agent",
-    "Coding Agent",
-    "Agent Control Plane",
-    "Developer Infrastructure",
-    "BYOK",
-    "Agent Replay",
-  ],
-  authors: [{ name: "BambooKit Team" }],
-  icons: {
-    icon: "/favicon.ico",
-  },
+    "BambooKit is an AI software-engineering workspace for Windows with a phone remote: chat with agents, review diffs, approve commands and stop or continue work from anywhere.",
+  icons: { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
+  openGraph: { title: "BambooKit", description: "AI coding on your PC, controlled from your phone.", images: ["/icon.png"] },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = { themeColor: "#121212", colorScheme: "dark" };
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#0a0d0e] text-[#f1f5f9] antialiased selection:bg-[#10b981]/20 selection:text-[#34d399]">
-        {children}
-      </body>
+      <body className="min-h-screen antialiased">{children}</body>
     </html>
   );
 }

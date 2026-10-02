@@ -1,27 +1,35 @@
-import React from 'react';
-import { Navbar, Footer } from '@/components/layout/Navbar';
+import { TextPage } from "@/components/site/TextPage";
+
+export const metadata = { title: "Privacy" };
+
+const BODY = `
+This page describes what BambooKit stores. It is a plain-language summary, not a substitute for legal advice.
+
+## On your PC
+
+Your source code, terminal output and model API keys stay on your PC. The AI agent runs locally and sends prompts directly to the model provider you choose.
+
+## In BambooKit Cloud
+
+| Data | Why | Retention |
+|---|---|---|
+| Account email and name | Sign-in (handled by Supabase / Firebase) | Until you delete your account |
+| Device names and public keys | Pairing and signed requests | Until you revoke the device |
+| Project names and folder paths, session titles and status | Showing your work on the phone | While the session exists |
+| Chat text, tool names and titles, changed-file names and line counts | The phone's live session view | While the session exists |
+| Diff contents | Only when you open a diff on the phone | Stored with that request |
+| Approvals, notifications and activity events | Approvals and history | Events: 14 days |
+| Shared sessions | Only when you choose Publish | Until you unpublish |
+
+BambooKit does not sell your data and does not use it to train models.
+
+## Your choices
+
+- Use **Continue offline** in BambooKit Desktop to use the agent without BambooKit Cloud.
+- Revoke devices at any time in **Devices**.
+- Unpublish shared sessions from the session's Share menu.
+`;
 
 export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-[#0a0d0e] flex flex-col">
-      <Navbar />
-      <main className="flex-1 py-16 px-4 sm:px-6 max-w-4xl mx-auto w-full space-y-6 text-xs text-[#94a3b8] leading-relaxed">
-        <h1 className="text-2xl font-bold text-[#f1f5f9]">Privacy Policy</h1>
-        <p className="text-[#64748b]">Effective Date: September 2026</p>
-        <div className="p-6 rounded-lg bg-[#0f1416] border border-[#1c2529] space-y-4">
-          <h2 className="text-sm font-semibold text-[#f1f5f9]">1. Zero Model Training on Code</h2>
-          <p>
-            BambooKit does not sell, inspect, or use your proprietary codebase, repositories, or prompts to train AI models.
-            When using BYOK mode, tokens stream directly between your isolated sandbox and your authorized AI provider.
-          </p>
-          <h2 className="text-sm font-semibold text-[#f1f5f9]">2. Ephemeral Storage</h2>
-          <p>
-            Cloud worker disks are wiped securely immediately after agent task completion. Artifacts, diff summaries, and
-            replay timelines remain encrypted at rest within your workspace ledger.
-          </p>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
+  return <TextPage title="Privacy" updated="October 2026" body={BODY} />;
 }

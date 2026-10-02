@@ -1,27 +1,27 @@
-import React from 'react';
-import { Navbar, Footer } from '@/components/layout/Navbar';
+import { TextPage } from "@/components/site/TextPage";
+
+export const metadata = { title: "Terms" };
+
+const BODY = `
+BambooKit is provided as is. It is a plain-language summary, not a substitute for legal advice.
+
+## Your code and output
+
+You own your code and everything the agent produces for you. You are responsible for reviewing changes and approvals before using them.
+
+## Model providers
+
+When you use a model provider, its own terms apply to your requests. Free BambooKit models are offered while available and may change.
+
+## Acceptable use
+
+Do not use BambooKit to attack systems you are not authorized to test, or to break the law.
+
+## Open source
+
+BambooKit Desktop is based on open-source software published under the MIT license. Its license and notices are included with the app.
+`;
 
 export default function TermsPage() {
-  return (
-    <div className="min-h-screen bg-[#0a0d0e] flex flex-col">
-      <Navbar />
-      <main className="flex-1 py-16 px-4 sm:px-6 max-w-4xl mx-auto w-full space-y-6 text-xs text-[#94a3b8] leading-relaxed">
-        <h1 className="text-2xl font-bold text-[#f1f5f9]">Terms of Service</h1>
-        <p className="text-[#64748b]">Effective Date: September 2026</p>
-        <div className="p-6 rounded-lg bg-[#0f1416] border border-[#1c2529] space-y-4">
-          <h2 className="text-sm font-semibold text-[#f1f5f9]">1. Control Plane Responsibilities</h2>
-          <p>
-            BambooKit provides orchestration and isolation software for autonomous software engineering. Users maintain
-            complete ownership of generated code, repository commits, and deployments.
-          </p>
-          <h2 className="text-sm font-semibold text-[#f1f5f9]">2. Human Oversight &amp; Dangerous Operations</h2>
-          <p>
-            While BambooKit enforces strict permission policies and approval gates, developers are ultimately responsible
-            for reviewing diffs and granting approvals before code is promoted to live production environments.
-          </p>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
+  return <TextPage title="Terms" updated="October 2026" body={BODY} />;
 }
