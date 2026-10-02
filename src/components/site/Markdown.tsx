@@ -32,6 +32,20 @@ function inline(text: string, keyBase: string): ReactNode[] {
   return out;
 }
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[`*]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/** The `##` headings of a doc, for an "On this page" list. */
+export function docHeadings(source: string): Array<{ id: string; text: string }> {
+  const out: Array<{ id: string; text: string }> = [];
+  for (const line of source.split("\n")) {
+    const m = /^##\s+(.*?)(?:\s+\{#([\w-]+)\})?$/.exec(line);
+    if (m) out.push({ id: m[2] ?? slugify(m[1]), text: m[1].replace(/[`*]/g, "") });
+  }
+  return out;
+}
+
 /** Small markdown renderer for the docs: headings (with {#id}), paragraphs, lists, tables, fenced code. */
 export function Markdown({ source }: { source: string }) {
   const lines = source.replace(/^\n+|\n+$/g, "").split("\n");
@@ -56,7 +70,7 @@ export function Markdown({ source }: { source: string }) {
     const heading = /^(#{2,3})\s+(.*?)(?:\s+\{#([\w-]+)\})?$/.exec(line);
     if (heading) {
       const Tag = heading[1] === "##" ? "h2" : "h3";
-      const id = heading[3] ?? heading[2].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const id = heading[3] ?? slugify(heading[2]);
       blocks.push(<Tag key={k++} id={id} className="scroll-mt-20">{inline(heading[2], `h${k}`)}</Tag>);
       i++;
       continue;
