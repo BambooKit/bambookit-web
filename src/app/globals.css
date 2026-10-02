@@ -12,6 +12,7 @@
   --color-bk-accent: #e5edd5;
   --color-bk-ok: #9fd39a;
   --color-bk-err: #ef8a80;
+  --color-bk-warn: #e6c27a;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 

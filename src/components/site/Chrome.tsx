@@ -16,6 +16,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-5 text-sm text-bk-muted">
           <Link href="/docs" className="hover:text-bk-fg">Docs</Link>
           <Link href="/docs/install" className="hover:text-bk-fg">Install</Link>
+          <Link href="/system" className="hover:text-bk-fg">System</Link>
           <Link href="/security" className="hidden hover:text-bk-fg sm:inline">Security</Link>
           <a href={LINKS.github} className="hover:text-bk-fg">GitHub</a>
         </nav>
