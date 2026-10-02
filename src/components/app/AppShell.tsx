@@ -1,0 +1,179 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BookOpen, ChevronDown, LogOut } from "lucide-react";
+import { Wordmark } from "@/components/site/Logo";
+import { ConfigMissing } from "@/components/auth/AuthCard";
+import { LoadingState, cx } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
+import { useResource } from "@/lib/api";
+import { RealtimeProvider, useLiveState, useRealtime } from "@/lib/realtime";
+import type { Approval } from "@/lib/types";
+
+const TABS = [
+  { href: "/sessions/", label: "Sessions", match: ["/sessions", "/session"] },
+  { href: "/devices/", label: "Devices", match: ["/devices"] },
+  { href: "/approvals/", label: "Approvals", match: ["/approvals"] },
+  { href: "/welcome/", label: "Setup", match: ["/welcome"] },
+];
+
+/** Redirects to /signin when signed out; renders children once signed in. */
+export function RequireAuth({ children }: { children: ReactNode }) {
+  const { status, emailEnabled, googleEnabled } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (status !== "signedOut" || (!emailEnabled && !googleEnabled)) return;
+    const next = `${pathname ?? "/sessions/"}${window.location.search}`;
+    router.replace(`/signin/?next=${encodeURIComponent(next)}`);
+  }, [status, emailEnabled, googleEnabled, pathname, router]);
+
+  if (!emailEnabled && !googleEnabled) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-20">
+        <ConfigMissing />
+      </div>
+    );
+  }
+  if (status !== "signedIn") return <LoadingState label={status === "loading" ? "Checking your sign-in…" : "Redirecting to sign in…"} />;
+  return <>{children}</>;
+}
+
+function LiveIndicator() {
+  const state = useLiveState();
+  const label = state === "live" ? "Live" : state === "off" ? "Offline" : state === "connecting" ? "Connecting" : "Reconnecting";
+  return (
+    <span className="hidden items-center gap-1.5 text-xs text-bk-faint sm:inline-flex" title={`Realtime updates: ${label.toLowerCase()}`}>
+      <span className={cx("size-1.5 rounded-full", state === "live" ? "bg-bk-ok" : state === "off" ? "bg-bk-faint" : "animate-pulse bg-bk-warn")} />
+      {label}
+    </span>
+  );
+}
+
+function UserMenu() {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+  const label = user?.name || user?.email || "Account";
+  const initial = (label.trim()[0] ?? "?").toUpperCase();
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <span className="grid size-7 place-items-center rounded-full bg-bk-raised text-xs font-semibold text-bk-fg">{initial}</span>
+        <span className="hidden max-w-40 truncate md:inline">{label}</span>
+        <ChevronDown className="size-3.5" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-bk-line bg-bk-panel p-1.5 shadow-xl">
+          <div className="border-b border-bk-line px-3 py-2.5">
+            <div className="truncate text-sm text-bk-fg">{user?.name || "Signed in"}</div>
+            {user?.email && <div className="truncate text-xs text-bk-faint">{user.email}</div>}
+            <div className="mt-1 text-[11px] text-bk-faint">{user?.provider === "google" ? "Google account" : "Email account"}</div>
+          </div>
+          <Link href="/docs/" className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
+            <BookOpen className="size-4" /> Docs
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={async () => {
+              await signOut();
+              router.replace("/signin/");
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg"
+          >
+            <LogOut className="size-4" /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShellFrame({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "";
+  const approvals = useResource<Approval[]>("/v1/approvals?status=PENDING");
+  useRealtime((e) => {
+    if (e.type.startsWith("approval.") || (e.type === "ready" && e.payload?.reconnect)) approvals.reload();
+  });
+  const pending = approvals.data?.length ?? 0;
+  const isActive = (match: string[]) => match.some((m) => pathname === m || pathname.startsWith(`${m}/`));
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-30 border-b border-bk-line bg-bk-bg/90 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
+          <Link href="/" aria-label="BambooKit home" className="mr-2 shrink-0">
+            <Wordmark />
+          </Link>
+          <nav className="hidden items-center gap-1 text-sm sm:flex">
+            {TABS.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                className={cx(
+                  "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5",
+                  isActive(t.match) ? "bg-bk-raised text-bk-fg" : "text-bk-muted hover:text-bk-fg",
+                )}
+              >
+                {t.label}
+                {t.href === "/approvals/" && pending > 0 && (
+                  <span className="rounded-full bg-bk-warn/15 px-1.5 text-[11px] font-semibold text-bk-warn">{pending}</span>
+                )}
+              </Link>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-3">
+            <LiveIndicator />
+            <UserMenu />
+          </div>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto border-t border-bk-line px-3 py-1.5 text-sm sm:hidden">
+          {TABS.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={cx(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5",
+                isActive(t.match) ? "bg-bk-raised text-bk-fg" : "text-bk-muted",
+              )}
+            >
+              {t.label}
+              {t.href === "/approvals/" && pending > 0 && <span className="rounded-full bg-bk-warn/15 px-1.5 text-[11px] font-semibold text-bk-warn">{pending}</span>}
+            </Link>
+          ))}
+        </nav>
+      </header>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+    </div>
+  );
+}
+
+/** Signed-in app shell: auth guard, realtime stream and app navigation. */
+export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <RequireAuth>
+      <RealtimeProvider>
+        <ShellFrame>{children}</ShellFrame>
+      </RealtimeProvider>
+    </RequireAuth>
+  );
+}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CodeBlock } from "./CodeBlock";
+import { withSlash } from "@/lib/format";
 
 /** Inline: `code`, **bold**, [text](href). */
 function inline(text: string, keyBase: string): ReactNode[] {
@@ -17,7 +18,13 @@ function inline(text: string, keyBase: string): ReactNode[] {
     else if (tok.startsWith("**")) out.push(<strong key={key} className="text-bk-fg">{tok.slice(2, -2)}</strong>);
     else {
       const [, label, href] = /\[([^\]]+)\]\(([^)]+)\)/.exec(tok)!;
-      out.push(href.startsWith("/") ? <Link key={key} href={href}>{label}</Link> : <a key={key} href={href}>{label}</a>);
+      out.push(
+        href.startsWith("/") ? (
+          <Link key={key} href={withSlash(href)}>{label}</Link>
+        ) : (
+          <a key={key} href={href} rel="noopener noreferrer">{label}</a>
+        ),
+      );
     }
     last = m.index + tok.length;
   }
