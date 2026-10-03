@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, ChevronDown, LogOut } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { BookOpen, ChevronDown, LogOut, UserRound } from "lucide-react";
 import { Wordmark } from "@/components/site/Logo";
 import { ConfigMissing } from "@/components/auth/AuthCard";
 import { LoadingState, cx } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useResource } from "@/lib/api";
 import { RealtimeProvider, useLiveState, useRealtime } from "@/lib/realtime";
+import { useProfile } from "@/lib/profile";
 import type { Approval } from "@/lib/types";
 
 const TABS = [
@@ -17,7 +18,25 @@ const TABS = [
   { href: "/devices/", label: "Devices", match: ["/devices"] },
   { href: "/approvals/", label: "Approvals", match: ["/approvals"] },
   { href: "/welcome/", label: "Setup", match: ["/welcome"] },
+  { href: "/account/", label: "Account", match: ["/account"] },
 ];
+
+/** Where to go after an intentional sign-out (instead of the sign-in page with ?next=). */
+let leaveTarget: string | null = null;
+
+/** Sign out and go to `to` (e.g. "/" after deleting the account). */
+export function useLeaveApp(): (to: string) => Promise<void> {
+  const { signOut } = useAuth();
+  const router = useRouter();
+  return useCallback(
+    async (to: string) => {
+      leaveTarget = to;
+      await signOut();
+      router.replace(to);
+    },
+    [signOut, router],
+  );
+}
 
 /** Redirects to /signin when signed out; renders children once signed in. */
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -27,6 +46,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status !== "signedOut" || (!emailEnabled && !googleEnabled)) return;
+    if (leaveTarget) {
+      const to = leaveTarget;
+      leaveTarget = null;
+      router.replace(to);
+      return;
+    }
     const next = `${pathname ?? "/sessions/"}${window.location.search}`;
     router.replace(`/signin/?next=${encodeURIComponent(next)}`);
   }, [status, emailEnabled, googleEnabled, pathname, router]);
@@ -54,8 +79,12 @@ function LiveIndicator() {
 }
 
 function UserMenu() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
+  const leave = useLeaveApp();
+  const profile = useProfile();
+  const [imgFailed, setImgFailed] = useState(false);
+  const avatarUrl = profile.data?.avatarUrl ?? null;
+  useEffect(() => setImgFailed(false), [avatarUrl]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -66,7 +95,7 @@ function UserMenu() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
-  const label = user?.name || user?.email || "Account";
+  const label = profile.data?.name || user?.name || user?.email || "Account";
   const initial = (label.trim()[0] ?? "?").toUpperCase();
   return (
     <div className="relative" ref={ref}>
@@ -77,27 +106,32 @@ function UserMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="grid size-7 place-items-center rounded-full bg-bk-raised text-xs font-semibold text-bk-fg">{initial}</span>
+        {avatarUrl && !imgFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt="" className="size-7 rounded-full object-cover" referrerPolicy="no-referrer" onError={() => setImgFailed(true)} />
+        ) : (
+          <span className="grid size-7 place-items-center rounded-full bg-bk-raised text-xs font-semibold text-bk-fg">{initial}</span>
+        )}
         <span className="hidden max-w-40 truncate md:inline">{label}</span>
         <ChevronDown className="size-3.5" />
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-bk-line bg-bk-panel p-1.5 shadow-xl">
           <div className="border-b border-bk-line px-3 py-2.5">
-            <div className="truncate text-sm text-bk-fg">{user?.name || "Signed in"}</div>
+            <div className="truncate text-sm text-bk-fg">{profile.data?.name || user?.name || "Signed in"}</div>
             {user?.email && <div className="truncate text-xs text-bk-faint">{user.email}</div>}
             <div className="mt-1 text-[11px] text-bk-faint">{user?.provider === "google" ? "Google account" : "Email account"}</div>
           </div>
-          <Link href="/docs/" className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
+          <Link href="/account/" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
+            <UserRound className="size-4" /> Account
+          </Link>
+          <Link href="/docs/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
             <BookOpen className="size-4" /> Docs
           </Link>
           <button
             type="button"
             role="menuitem"
-            onClick={async () => {
-              await signOut();
-              router.replace("/signin/");
-            }}
+            onClick={() => void leave("/signin/")}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg"
           >
             <LogOut className="size-4" /> Sign out

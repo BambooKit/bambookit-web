@@ -10,7 +10,7 @@ import { useNow } from "@/lib/live";
 import { fullDate, timeAgo } from "@/lib/format";
 import type { Approval } from "@/lib/types";
 
-function statusTone(status: string): "warn" | "ok" | "err" | "neutral" {
+export function approvalTone(status: string): "warn" | "ok" | "err" | "neutral" {
   const s = status.toUpperCase();
   if (s === "PENDING" || s === "RESPONDING") return "warn";
   if (s === "APPROVED") return "ok";
@@ -60,7 +60,7 @@ export function ApprovalsView() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-bk-fg">{a.title || a.permission}</span>
-                    <Pill tone={statusTone(a.status)}>{a.status.toLowerCase()}</Pill>
+                    <Pill tone={approvalTone(a.status)}>{a.status.toLowerCase()}</Pill>
                     <Pill>{a.permission}</Pill>
                   </div>
                   {a.patterns.length > 0 && (

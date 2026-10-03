@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Brain, ChevronRight, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, MessagesSquare, RefreshCw, ShieldAlert, WifiOff, Wrench } from "lucide-react";
 import { RichText } from "./RichText";
+import { ChangesTab, FilesTab, HistoryGate, PromptsTab, SourceBadge, SummaryTab, TimelineTab, agentLabel, touchedFiles } from "./SessionHistory";
 import { Button, ButtonLink, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, OnlineDot, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
 import { useResource, type ApiError, type Resource } from "@/lib/api";
 import { useLiveDevices, useNow } from "@/lib/live";
 import { useLiveState, useRealtime } from "@/lib/realtime";
 import { fullDate, plural, timeAgo } from "@/lib/format";
-import type { ChangedFile, Part, Session } from "@/lib/types";
+import type { ChangedFile, Part, Session, SessionHistoryResponse } from "@/lib/types";
 
 const VIEW_ONLY = "View only — continue this session in BambooKit Desktop, or on your phone after continuing it on your PC.";
 
@@ -184,7 +185,7 @@ function fileIcon(status: string | null | undefined) {
   return <FileDiff className="size-3.5 shrink-0 text-bk-faint" />;
 }
 
-function ChangesPanel({ changes }: { changes: Resource<ChangedFile[]> }) {
+function ChangesPanel({ changes, onOpen }: { changes: Resource<ChangedFile[]>; onOpen: (file?: string) => void }) {
   const files = changes.data ?? [];
   const totals = files.reduce((t, f) => ({ a: t.a + (f.additions || 0), d: t.d + (f.deletions || 0) }), { a: 0, d: 0 });
   return (
@@ -208,7 +209,8 @@ function ChangesPanel({ changes }: { changes: Resource<ChangedFile[]> }) {
             const name = f.file.slice(slash + 1);
             const dir = slash > 0 ? f.file.slice(0, slash) : "";
             return (
-              <li key={f.file} className="flex items-center gap-2 px-4 py-2" title={f.file}>
+              <li key={f.file}>
+                <button type="button" onClick={() => onOpen(f.file)} className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-bk-raised" title={f.file}>
                 {fileIcon(f.status)}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-xs text-bk-fg">{name}</span>
@@ -217,45 +219,107 @@ function ChangesPanel({ changes }: { changes: Resource<ChangedFile[]> }) {
                 <span className="shrink-0 font-mono text-[11px] tabular-nums">
                   <span className="text-bk-ok">+{f.additions}</span> <span className="text-bk-err">−{f.deletions}</span>
                 </span>
+                </button>
               </li>
             );
           })}
         </ul>
       )}
       {changes.data && files.length > 0 && (
-        <p className="border-t border-bk-line px-4 py-2 text-[11px] text-bk-faint">Open diffs in BambooKit Desktop or on your phone.</p>
+        <button type="button" onClick={() => onOpen()} className="w-full border-t border-bk-line px-4 py-2 text-left text-[11px] text-bk-faint hover:text-bk-fg">
+          See every diff in the Changes tab
+        </button>
       )}
     </Card>
   );
 }
 
+const TABS = ["summary", "prompts", "timeline", "changes", "files", "chat"] as const;
+type Tab = (typeof TABS)[number];
+const TAB_LABEL: Record<Tab, string> = { summary: "Summary", prompts: "Prompts", timeline: "Timeline", changes: "Changes", files: "Files", chat: "Chat" };
+
+/** Session events that change the history; streaming text is excluded (the final status update covers it). */
+function affectsHistory(type: string, payload: any): boolean {
+  if (type === "session.part") return payload?.type === "tool" || payload?.role === "user";
+  return type === "session.updated" || type === "session.diff" || type === "session.transcript" || type.startsWith("approval.");
+}
+
 export function SessionView() {
-  const id = useSearchParams().get("id");
+  const params = useSearchParams();
+  const id = params.get("id");
   const now = useNow();
   const live = useLiveState();
   const enc = id ? encodeURIComponent(id) : null;
   const session = useResource<Session>(enc ? `/v1/sessions/${enc}` : null);
   const parts = useResource<Part[]>(enc ? `/v1/sessions/${enc}/parts` : null);
   const changes = useResource<ChangedFile[]>(enc ? `/v1/sessions/${enc}/changes` : null);
+  const history = useResource<SessionHistoryResponse>(enc ? `/v1/sessions/${enc}/history` : null);
   const devices = useLiveDevices();
   const [removed, setRemoved] = useState(false);
+  const initialTab = params.get("tab") as Tab | null;
+  const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) ? initialTab : "summary");
+  const [changeFile, setChangeFile] = useState<string | null>(null);
+  const [touchedFile, setTouchedFile] = useState<string | null>(null);
+
+  const setTab = useCallback(
+    (next: Tab) => {
+      setTabState(next);
+      if (!id) return;
+      const qs = new URLSearchParams({ id });
+      if (next !== "summary") qs.set("tab", next);
+      window.history.replaceState(null, "", `?${qs}`);
+    },
+    [id],
+  );
+  const openChange = useCallback(
+    (file?: string) => {
+      if (file) setChangeFile(file);
+      setTab("changes");
+    },
+    [setTab],
+  );
 
   const pc = devices.data?.find((d) => d.id === session.data?.deviceId);
   const pcOnline = pc?.online ?? false;
+  const pcKnown = !!devices.data && !!session.data;
 
-  // When the PC comes back online, retry whatever failed because it was offline.
-  const prevOnline = useRef(pcOnline);
+  // Refresh the history at most every few seconds while the session is active.
+  const historyReload = history.reload;
+  const historyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleHistory = useCallback(() => {
+    if (historyTimer.current) return;
+    historyTimer.current = setTimeout(() => {
+      historyTimer.current = null;
+      historyReload();
+    }, 2500);
+  }, [historyReload]);
+  useEffect(
+    () => () => {
+      if (historyTimer.current) clearTimeout(historyTimer.current);
+    },
+    [],
+  );
+
+  // When the PC goes offline or comes back, retry what failed and switch the history between the
+  // live PC copy and the saved cloud copy.
+  const prevOnline = useRef<boolean | null>(null);
   useEffect(() => {
-    if (pcOnline && !prevOnline.current) {
-      if (parts.error) parts.reload();
-      if (changes.error) changes.reload();
+    if (!pcKnown) return;
+    if (prevOnline.current !== null && prevOnline.current !== pcOnline) {
+      if (pcOnline) {
+        if (parts.error) parts.reload();
+        if (changes.error) changes.reload();
+      }
+      historyReload();
     }
     prevOnline.current = pcOnline;
-  }, [pcOnline, parts, changes]);
+  }, [pcKnown, pcOnline, parts, changes, historyReload]);
 
   useRealtime((e) => {
     if (!id) return;
     const sid = e.sessionId ?? e.payload?.sessionId;
+    const mine = sid === id || e.payload?.id === id;
+    if (mine && affectsHistory(e.type, e.payload)) scheduleHistory();
     switch (e.type) {
       case "session.updated":
         if (e.payload?.id === id) session.setData((s) => ({ ...s, ...(e.payload as Session) }));
@@ -287,6 +351,7 @@ export function SessionView() {
           session.reload();
           parts.reload();
           changes.reload();
+          historyReload();
         }
         break;
     }
@@ -313,6 +378,15 @@ export function SessionView() {
 
   const s = session.data;
   const isLive = live === "live" && pcOnline;
+  const h = history.data?.history;
+  const counts: Partial<Record<Tab, number>> = h
+    ? {
+        prompts: (h.prompts ?? []).filter((p) => (p.text ?? "").trim()).length,
+        timeline: (h.timeline?.length ?? 0) + (history.data?.approvals?.length ?? 0),
+        changes: h.changes?.length ?? 0,
+        files: touchedFiles(h).length,
+      }
+    : {};
 
   return (
     <div className="min-w-0">
@@ -327,6 +401,8 @@ export function SessionView() {
           <span className={cx("inline-flex items-center gap-1.5 text-xs", isLive ? "text-bk-ok" : "text-bk-faint")} title={isLive ? "Receiving live updates from your PC" : "Not live"}>
             <OnlineDot online={isLive} /> {isLive ? "Live" : "Not live"}
           </span>
+          <SourceBadge data={history.data} now={now} />
+          {history.loading && history.data && <Spinner className="size-3.5 text-bk-faint" />}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-bk-muted">
           <span className="inline-flex items-center gap-1.5">
@@ -339,7 +415,7 @@ export function SessionView() {
             </span>
           )}
           {s.model && <span className="truncate font-mono text-xs">{s.model}</span>}
-          {s.agent && <span className="text-xs text-bk-faint">agent: {s.agent}</span>}
+          {s.agent && <span className="text-xs text-bk-faint">{agentLabel(s.agent)}</span>}
           <span className="inline-flex items-center gap-1.5 text-xs text-bk-faint" title={fullDate(s.updatedAt)}>
             <Clock className="size-3.5" /> updated {timeAgo(s.updatedAt, now)}
           </span>
@@ -365,9 +441,58 @@ export function SessionView() {
         </Notice>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <ChatPanel parts={parts} busy={s.status === "busy"} />
-        <ChangesPanel changes={changes} />
+      <div role="tablist" aria-label="Session views" className="mb-5 flex gap-1 overflow-x-auto border-b border-bk-line">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={cx(
+              "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm",
+              tab === t ? "border-bk-accent text-bk-fg" : "border-transparent text-bk-muted hover:text-bk-fg",
+            )}
+          >
+            {TAB_LABEL[t]}
+            {(counts[t] ?? 0) > 0 && <span className="rounded-full bg-bk-raised px-1.5 text-[11px] tabular-nums text-bk-muted">{counts[t]}</span>}
+          </button>
+        ))}
+      </div>
+
+      <div role="tabpanel" aria-label={TAB_LABEL[tab]}>
+        {tab === "chat" ? (
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <ChatPanel parts={parts} busy={s.status === "busy"} />
+            <ChangesPanel changes={changes} onOpen={openChange} />
+          </div>
+        ) : (
+          <HistoryGate history={history}>
+            {(data) =>
+              tab === "summary" ? (
+                <SummaryTab data={data} session={s} now={now} onOpenChange={openChange} />
+              ) : tab === "prompts" ? (
+                <PromptsTab data={data} now={now} />
+              ) : tab === "timeline" ? (
+                <TimelineTab
+                  data={data}
+                  now={now}
+                  onOpenFile={(file) => {
+                    if (data.history?.changes?.some((c) => c.file === file)) openChange(file);
+                    else {
+                      setTouchedFile(file);
+                      setTab("files");
+                    }
+                  }}
+                />
+              ) : tab === "changes" ? (
+                <ChangesTab data={data} sessionId={enc!} pcOnline={pcOnline} now={now} selected={changeFile} onSelect={setChangeFile} />
+              ) : (
+                <FilesTab data={data} sessionId={enc!} pcOnline={pcOnline} onOpenChange={openChange} selected={touchedFile} onSelect={setTouchedFile} />
+              )
+            }
+          </HistoryGate>
+        )}
       </div>
     </div>
   );

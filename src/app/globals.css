@@ -13,6 +13,16 @@
   --color-bk-ok: #9fd39a;
   --color-bk-err: #ef8a80;
   --color-bk-warn: #e6c27a;
+  --color-bk-info: #9cc3d6;
+  /* Diffs: semantic add/delete/hunk colors. */
+  --color-bk-diff-add-bg: #1b2a1a;
+  --color-bk-diff-add-gutter: #22361f;
+  --color-bk-diff-add-fg: #b9e3b4;
+  --color-bk-diff-del-bg: #2e1c1a;
+  --color-bk-diff-del-gutter: #3d2320;
+  --color-bk-diff-del-fg: #f2b0a8;
+  --color-bk-diff-hunk-bg: #1a2226;
+  --color-bk-diff-hunk-fg: #8fb4c6;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 

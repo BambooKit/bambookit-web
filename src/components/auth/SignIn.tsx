@@ -19,6 +19,15 @@ export function SignIn() {
   const [unconfirmed, setUnconfirmed] = useState(false);
   const [resent, setResent] = useState(false);
   const routing = useRef(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  // Supabase returns here from confirmation links; an expired or used link carries an error in the URL.
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const desc = hash.get("error_description") ?? params.get("error_description");
+    if (desc) setLinkError(desc.replace(/\+/g, " "));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const go = async () => {
     if (routing.current) return;
@@ -64,6 +73,11 @@ export function SignIn() {
     >
       <div className="space-y-4">
         {params.get("reset") === "1" && <Notice tone="ok">Password updated. Sign in with your new password.</Notice>}
+        {linkError && (
+          <Notice tone="warn">
+            {linkError}. Verification links work once, for a limited time. Sign in to get a new one, or use Forgot password.
+          </Notice>
+        )}
         <GoogleButton onSignedIn={() => void go()} />
         {emailEnabled ? (
           <form

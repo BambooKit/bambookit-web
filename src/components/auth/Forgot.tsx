@@ -36,7 +36,7 @@ export function Forgot() {
   if (sentTo) {
     return (
       <AuthLayout title="Check your email" footer={footer}>
-        <CheckEmail email={sentTo} what="a password reset link" onResend={() => send(sentTo)} />
+        <CheckEmail email={sentTo} what="a password reset link" ifAccountExists onResend={() => send(sentTo)} />
       </AuthLayout>
     );
   }

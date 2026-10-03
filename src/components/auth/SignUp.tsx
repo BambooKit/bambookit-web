@@ -8,7 +8,11 @@ import { AuthLayout, ConfigMissing, Field, FormError, GoogleButton, SubmitButton
 import { Button, LoadingState, Notice } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 
-export function CheckEmail({ email, onResend, what }: { email: string; onResend?: () => Promise<string | null>; what: string }) {
+/**
+ * "Check your email" state. `ifAccountExists` is for flows where the auth service does not reveal
+ * whether an address has an account (password reset), so the copy must not claim an email was sent.
+ */
+export function CheckEmail({ email, onResend, what, ifAccountExists }: { email: string; onResend?: () => Promise<string | null>; what: string; ifAccountExists?: boolean }) {
   const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   useEffect(() => {
@@ -20,7 +24,9 @@ export function CheckEmail({ email, onResend, what }: { email: string; onResend?
     <div className="space-y-4 text-center">
       <MailCheck className="mx-auto size-8 text-bk-ok" />
       <p className="text-sm text-bk-muted">
-        We sent {what} to <span className="font-medium text-bk-fg">{email}</span>. Open the link in that email to continue.
+        {ifAccountExists ? "If an account exists for " : "We sent " + what + " to "}
+        <span className="font-medium text-bk-fg">{email}</span>
+        {ifAccountExists ? `, we sent it ${what}.` : "."} Open the link in that email to continue.
       </p>
       <p className="text-xs text-bk-faint">Can&apos;t find it? Check your spam folder.</p>
       {onResend && (

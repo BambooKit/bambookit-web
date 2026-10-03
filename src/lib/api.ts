@@ -14,14 +14,26 @@ export class ApiError extends Error {
   }
 }
 
-/** Fetch a BambooKit API path and unwrap `{ data }`. Errors become ApiError with the API's code and message. */
-export async function apiGet<T>(path: string, token: string | null, signal?: AbortSignal): Promise<T> {
+/** Call a BambooKit API path and unwrap `{ data }`. Errors become ApiError with the API's code and message. */
+export async function apiRequest<T>(
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  token: string | null,
+  options: { body?: unknown; signal?: AbortSignal } = {},
+): Promise<T> {
   let res: Response;
+  const hasBody = options.body !== undefined;
   try {
     res = await fetch(`${API_URL}${path}`, {
-      headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: hasBody ? JSON.stringify(options.body) : undefined,
       cache: "no-store",
-      signal,
+      signal: options.signal,
     });
   } catch (err) {
     if ((err as Error)?.name === "AbortError") throw err;
@@ -41,6 +53,11 @@ export async function apiGet<T>(path: string, token: string | null, signal?: Abo
     throw new ApiError(res.status, code, message);
   }
   return body?.data as T;
+}
+
+/** GET a BambooKit API path and unwrap `{ data }`. */
+export function apiGet<T>(path: string, token: string | null, signal?: AbortSignal): Promise<T> {
+  return apiRequest<T>("GET", path, token, { signal });
 }
 
 export interface Resource<T> {
