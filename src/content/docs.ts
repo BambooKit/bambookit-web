@@ -48,11 +48,11 @@ Open PowerShell and run:
 irm https://bambookit-web.onrender.com/install.ps1 | iex
 \`\`\`
 
-This downloads the latest **BambooKit Desktop** installer from GitHub Releases, checks its signature and starts it. You can also download the installer yourself from the [releases page](https://github.com/BambooKit/bambookit-desktop/releases/latest).
+This downloads the latest **BambooKit Desktop** installer from GitHub Releases, checks its signature and starts it. You can also download the installer yourself from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest).
 
 ## Android
 
-1. On your phone, download **BambooKit.apk** from the [releases page](https://github.com/BambooKit/bambookit-desktop/releases/latest).
+1. On your phone, download **BambooKit.apk** from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest).
 2. Allow installing from your browser when Android asks, then open the file.
 3. Sign in with the same account you use on the PC.
 4. Pair the phone with your PC: see [Phone](/docs/phone).

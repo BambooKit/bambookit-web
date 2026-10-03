@@ -3,7 +3,7 @@
 # Downloads the latest BambooKit Desktop setup from GitHub Releases, checks its code signature
 # (warning if it is unsigned), and runs it.
 $ErrorActionPreference = "Stop"
-$repo = "BambooKit/bambookit-desktop"
+$repo = "BambooKit/bambookit-application"
 
 if (-not [Environment]::Is64BitOperatingSystem) { throw "BambooKit Desktop requires 64-bit Windows." }
 

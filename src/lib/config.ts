@@ -34,7 +34,7 @@ export const FIREBASE: FirebaseConfig | null =
 
 export const LINKS = {
   github: "https://github.com/BambooKit",
-  releases: "https://github.com/BambooKit/bambookit-desktop/releases/latest",
+  releases: "https://github.com/BambooKit/bambookit-application/releases/latest",
 };
 
 export const INSTALL_COMMAND = "irm https://bambookit-web.onrender.com/install.ps1 | iex";
