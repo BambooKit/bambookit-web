@@ -100,8 +100,14 @@ export function SiteFooter() {
           <Link href="/security/" className="hover:text-bk-fg">Security</Link>
           <Link href="/privacy/" className="hover:text-bk-fg">Privacy</Link>
           <Link href="/terms/" className="hover:text-bk-fg">Terms</Link>
+          <a href={LINKS.discussions} className="hover:text-bk-fg" rel="noopener noreferrer">Support</a>
+          <a href={LINKS.bugReport} className="hover:text-bk-fg" rel="noopener noreferrer">Report a bug</a>
+          <a href={LINKS.featureRequest} className="hover:text-bk-fg" rel="noopener noreferrer">Feedback</a>
           <a href={LINKS.github} className="hover:text-bk-fg" rel="noopener noreferrer">GitHub</a>
         </div>
+      </div>
+      <div className="mx-auto max-w-6xl px-4 pb-6 text-xs text-bk-faint sm:px-6">
+        Created and maintained by Satyam Pote.
       </div>
     </footer>
   );

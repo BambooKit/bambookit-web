@@ -33,8 +33,11 @@ export const FIREBASE: FirebaseConfig | null =
   fbApiKey && fbAuthDomain && fbProjectId ? { apiKey: fbApiKey, authDomain: fbAuthDomain, projectId: fbProjectId } : null;
 
 export const LINKS = {
-  github: "https://github.com/BambooKit",
+  github: "https://github.com/BambooKit/bambookit-application",
   releases: "https://github.com/BambooKit/bambookit-application/releases/latest",
+  discussions: "https://github.com/BambooKit/bambookit-application/discussions",
+  bugReport: "https://github.com/BambooKit/bambookit-application/issues/new?template=bug_report.yml",
+  featureRequest: "https://github.com/BambooKit/bambookit-application/issues/new?template=feature_request.yml",
 };
 
 export const INSTALL_COMMAND = "irm https://bambookit-web.onrender.com/install.ps1 | iex";
