@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Brain, ChevronRight, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, MessagesSquare, RefreshCw, ShieldAlert, WifiOff, Wrench } from "lucide-react";
+import { ArrowLeft, Brain, ChevronRight, CircleCheck, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench } from "lucide-react";
 import { RichText } from "./RichText";
+import { ApprovalItem } from "./ApprovalsView";
 import { ChangesTab, FilesTab, HistoryGate, PromptsTab, SourceBadge, SummaryTab, TimelineTab, agentLabel, touchedFiles } from "./SessionHistory";
 import { Button, ButtonLink, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, OnlineDot, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
-import { useResource, type ApiError, type Resource } from "@/lib/api";
+import { ApiError, apiRequestFull, useResource, type Resource } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { useLiveDevices, useNow } from "@/lib/live";
 import { useLiveState, useRealtime } from "@/lib/realtime";
 import { fullDate, plural, timeAgo } from "@/lib/format";
-import type { ChangedFile, Part, Session, SessionHistoryResponse } from "@/lib/types";
+import type { Approval, ChangedFile, Part, Session, SessionHistoryResponse } from "@/lib/types";
 
-const VIEW_ONLY = "View only — continue this session in BambooKit Desktop, or on your phone after continuing it on your PC.";
+const VIEW_ONLY = "View only. Chat in BambooKit on your PC, or in the Android app.";
 
 function sortParts(parts: Part[]): Part[] {
   return parts.slice().sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0));
@@ -244,6 +246,75 @@ function affectsHistory(type: string, payload: any): boolean {
   return type === "session.updated" || type === "session.diff" || type === "session.transcript" || type.startsWith("approval.");
 }
 
+/** Asks the PC to open this session in BambooKit (CONTINUE_ON_PC). The website never sends chat messages. */
+function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOnline: boolean; pcName: string }) {
+  const { getToken } = useAuth();
+  const [state, setState] = useState<"idle" | "busy" | "sent" | "queued">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const send = async () => {
+    setState("busy");
+    setError(null);
+    try {
+      const res = await apiRequestFull<{ deviceOnline?: boolean } | null>("POST", `/v1/sessions/${encodeURIComponent(sessionId)}/commands`, await getToken(), {
+        body: { type: "CONTINUE_ON_PC", payload: {} },
+      });
+      setState(res?.deviceOnline === false ? "queued" : "sent");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : (err as Error)?.message || "Couldn't reach your PC. Try again.");
+      setState("idle");
+    }
+  };
+  return (
+    <Card className="mb-5 p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Laptop className="size-5 shrink-0 text-bk-faint" />
+        <p className="min-w-0 flex-1 text-sm text-bk-muted">
+          This page is view only. Chatting happens in BambooKit on your PC or in the Android app.
+          {!pcOnline && <span className="block text-xs text-bk-faint">{pcName} is offline. Open BambooKit on it to continue this session.</span>}
+        </p>
+        <Button
+          disabled={!pcOnline || state === "busy"}
+          onClick={() => void send()}
+          title={pcOnline ? `Open this session in BambooKit on ${pcName}` : `${pcName} is offline`}
+          className="px-3 py-1.5 text-xs"
+        >
+          {state === "busy" ? <Spinner className="size-3.5" /> : <Laptop className="size-3.5" />} Continue on PC
+        </Button>
+      </div>
+      {(state === "sent" || state === "queued") && (
+        <Notice tone="ok" className="mt-3" icon={<CircleCheck className="size-4" />}>
+          {state === "sent" ? `Asked ${pcName} to open this session in BambooKit.` : `${pcName} will open this session when BambooKit on it reconnects.`}
+        </Notice>
+      )}
+      {error && (
+        <Notice tone="err" className="mt-3" icon={<TriangleAlert className="size-4" />}>
+          {error}
+        </Notice>
+      )}
+    </Card>
+  );
+}
+
+/** Requests from this session that are waiting for an answer; answerable from here. */
+function WaitingRequests({ approvals, now }: { approvals: Resource<Approval[]>; now: number }) {
+  const list = approvals.data ?? [];
+  if (list.length === 0) return null;
+  return (
+    <Card className="mb-5 overflow-hidden border-bk-warn/40">
+      <div className="flex items-center gap-2 border-b border-bk-line px-4 py-2.5 text-sm font-medium text-bk-warn">
+        <ShieldAlert className="size-4" /> Waiting for you
+      </div>
+      <ul className="divide-y divide-bk-line">
+        {list.map((a) => (
+          <li key={a.id} className="px-4 py-3.5">
+            <ApprovalItem approval={a} now={now} showSession={false} onChanged={approvals.reload} />
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export function SessionView() {
   const params = useSearchParams();
   const id = params.get("id");
@@ -255,6 +326,7 @@ export function SessionView() {
   const changes = useResource<ChangedFile[]>(enc ? `/v1/sessions/${enc}/changes` : null);
   const history = useResource<SessionHistoryResponse>(enc ? `/v1/sessions/${enc}/history` : null);
   const devices = useLiveDevices();
+  const waiting = useResource<Approval[]>(enc ? `/v1/approvals?status=PENDING&sessionId=${enc}` : null);
   const [removed, setRemoved] = useState(false);
   const initialTab = params.get("tab") as Tab | null;
   const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) ? initialTab : "summary");
@@ -320,6 +392,7 @@ export function SessionView() {
     const sid = e.sessionId ?? e.payload?.sessionId;
     const mine = sid === id || e.payload?.id === id;
     if (mine && affectsHistory(e.type, e.payload)) scheduleHistory();
+    if (e.type.startsWith("approval.") || e.type === "notification" || (e.type === "ready" && e.payload?.reconnect)) waiting.reload();
     switch (e.type) {
       case "session.updated":
         if (e.payload?.id === id) session.setData((s) => ({ ...s, ...(e.payload as Session) }));
@@ -420,15 +493,20 @@ export function SessionView() {
             <Clock className="size-3.5" /> updated {timeAgo(s.updatedAt, now)}
           </span>
           {s.pendingApprovals > 0 && (
-            <Link href="/approvals/">
+            <button type="button" onClick={() => document.getElementById("waiting-requests")?.scrollIntoView({ behavior: "smooth" })}>
               <Pill tone="warn">
-                <ShieldAlert className="size-3" /> {plural(s.pendingApprovals, "approval")} waiting
+                <ShieldAlert className="size-3" /> {plural(s.pendingApprovals, "request")} waiting
               </Pill>
-            </Link>
+            </button>
           )}
         </div>
         {s.directory && <div className="mt-1.5 truncate font-mono text-xs text-bk-faint" title={s.directory}>{s.directory}</div>}
       </div>
+
+      <div id="waiting-requests">
+        <WaitingRequests approvals={waiting} now={now} />
+      </div>
+      {!removed && <ContinueOnPc sessionId={s.id} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />}
 
       {removed && (
         <Notice tone="warn" className="mb-4">

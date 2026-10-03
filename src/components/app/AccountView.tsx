@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Camera, CircleCheck, LogOut, MailWarning, Trash2, TriangleAlert } from "lucide-react";
+import { Bell, Camera, Check, CircleCheck, LogOut, MailWarning, Pencil, Trash2, TriangleAlert, X } from "lucide-react";
 import { useLeaveApp } from "./AppShell";
 import { Button, Card, ErrorState, LoadingState, Notice, PageHeader, Pill, Spinner, cx } from "@/components/ui";
 import { ApiError, apiRequest } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fullDate, plural, timeAgo } from "@/lib/format";
 import { useNow } from "@/lib/live";
-import { AVATAR_MAX_BYTES, AVATAR_TYPES, DELETE_CONFIRMATION, notifyProfileChanged, useProfile } from "@/lib/profile";
+import { AVATAR_MAX_BYTES, AVATAR_TYPES, DELETE_CONFIRMATION, NICKNAME_MAX, notifyProfileChanged, useProfile } from "@/lib/profile";
+import { useBrowserNotifications } from "@/lib/notifications";
 import type { AvatarUpload, Me } from "@/lib/types";
 
 function providerLabel(provider: string | null | undefined): string {
@@ -91,8 +92,8 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
         );
       }
       if (!put.ok) throw new UploadError(`Cloud storage rejected the photo (error ${put.status}). Nothing was changed. Try again in a moment.`);
-      const result = await apiRequest<{ avatarUrl: string | null }>("POST", "/v1/me/avatar", token, { body: { key: target.key } });
-      onChanged({ avatarUrl: result.avatarUrl, avatarStored: true });
+      const result = await apiRequest<{ avatarUrl: string | null; profile?: Me }>("POST", "/v1/me/avatar", token, { body: { key: target.key } });
+      onChanged(result.profile ?? { avatarUrl: result.avatarUrl, avatarStored: true });
       setDone("Profile photo updated.");
     } catch (err) {
       setError(friendlyError(err));
@@ -107,8 +108,8 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
     setDone(null);
     setBusy("remove");
     try {
-      await apiRequest("DELETE", "/v1/me/avatar", await getToken());
-      onChanged(null);
+      const result = await apiRequest<{ profile?: Me } | null>("DELETE", "/v1/me/avatar", await getToken());
+      onChanged(result?.profile ?? null);
       setDone("Profile photo removed.");
     } catch (err) {
       setError(friendlyError(err));
@@ -161,6 +162,138 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
         </Notice>
       )}
     </Card>
+  );
+}
+
+/** Control characters are not allowed in nicknames (same rule as the API). */
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function nicknameError(value: string): string | null {
+  const v = value.trim();
+  if (v.length > NICKNAME_MAX) return `Nicknames can be up to ${NICKNAME_MAX} characters (this one has ${v.length}).`;
+  if (CONTROL_CHARS.test(v)) return "The nickname contains characters that can't be used.";
+  return null;
+}
+
+function NicknameField({ me, onSaved }: { me: Me; onSaved: (profile: Me) => void }) {
+  const { getToken } = useAuth();
+  const current = me.nickname ?? "";
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!editing) setValue(current);
+  }, [current, editing]);
+
+  const invalid = nicknameError(value);
+  const unchanged = value.trim() === current;
+
+  const save = async () => {
+    setSaved(false);
+    if (invalid) return setError(invalid);
+    setBusy(true);
+    setError(null);
+    try {
+      const profile = await apiRequest<Me>("PATCH", "/v1/me", await getToken(), { body: { name: value.trim() } });
+      onSaved(profile);
+      setEditing(false);
+      setSaved(true);
+    } catch (err) {
+      setError(friendlyError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <span className="flex flex-wrap items-center gap-2">
+        {current ? <span>{current}</span> : <span className="text-bk-faint">Not set</span>}
+        <button
+          type="button"
+          onClick={() => {
+            setValue(current);
+            setError(null);
+            setSaved(false);
+            setEditing(true);
+          }}
+          className="inline-flex items-center gap-1 text-xs text-bk-muted underline-offset-2 hover:text-bk-fg hover:underline"
+        >
+          <Pencil className="size-3" /> {current ? "Edit" : "Set a nickname"}
+        </button>
+        {saved && (
+          <span className="inline-flex items-center gap-1 text-xs text-bk-ok">
+            <Check className="size-3" /> Saved
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!busy && !unchanged) void save();
+      }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && !busy) setEditing(false);
+          }}
+          autoFocus
+          placeholder="Your nickname"
+          aria-label="Nickname"
+          aria-invalid={!!invalid}
+          className={cx(
+            "w-full max-w-xs rounded-lg border bg-bk-bg px-3 py-1.5 text-sm text-bk-fg placeholder:text-bk-faint focus:outline-none",
+            invalid ? "border-bk-err/60" : "border-bk-line focus:border-bk-muted",
+          )}
+        />
+        <Button type="submit" variant="primary" className="px-3 py-1.5 text-xs" disabled={busy || unchanged || !!invalid}>
+          {busy ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />} Save
+        </Button>
+        <Button variant="ghost" className="px-3 py-1.5 text-xs" disabled={busy} onClick={() => setEditing(false)}>
+          <X className="size-3.5" /> Cancel
+        </Button>
+      </div>
+      <p className={cx("text-xs", invalid ? "text-bk-err" : "text-bk-faint")}>
+        {invalid ?? `${value.trim().length}/${NICKNAME_MAX} characters. Shown in BambooKit on all your devices. Leave it empty to use your sign-in name.`}
+      </p>
+      {error && error !== invalid && (
+        <Notice tone="err" icon={<TriangleAlert className="size-4" />}>
+          {error}
+        </Notice>
+      )}
+    </form>
+  );
+}
+
+function BrowserNotificationsRow() {
+  const { supported, permission, request } = useBrowserNotifications();
+  if (!supported) return <span className="text-bk-faint">This browser doesn&apos;t support notifications. Alerts still show inside the page.</span>;
+  if (permission === "granted") {
+    return <span className="text-bk-muted">On. While BambooKit is open in a tab, questions, approvals and finished sessions also show as browser notifications.</span>;
+  }
+  if (permission === "denied") {
+    return <span className="text-bk-muted">Blocked in your browser settings. Alerts still show inside the page while it is open.</span>;
+  }
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span className="text-bk-muted">Alerts show inside the page while it is open.</span>
+      <Button className="px-3 py-1.5 text-xs" onClick={() => void request()}>
+        <Bell className="size-3.5" /> Turn on browser notifications
+      </Button>
+    </span>
   );
 }
 
@@ -335,15 +468,28 @@ export function AccountView() {
         <ProfileCard
           me={m}
           onChanged={(patch) => {
-            if (patch) me.setData((d) => (d ? { ...d, ...patch } : d));
-            else me.reload();
-            notifyProfileChanged();
+            if (!patch) {
+              me.reload();
+              notifyProfileChanged();
+              return;
+            }
+            me.setData((d) => (d ? { ...d, ...patch } : d));
+            notifyProfileChanged(typeof patch.id === "string" ? (patch as Me) : null);
           }}
         />
 
         <Card>
           <dl className="divide-y divide-bk-line">
-            <Row label="Name">{m.name || <span className="text-bk-faint">Not set</span>}</Row>
+            <Row label="Nickname">
+              <NicknameField
+                me={m}
+                onSaved={(profile) => {
+                  me.setData((d) => (d ? { ...d, ...profile } : profile));
+                  notifyProfileChanged(profile);
+                }}
+              />
+            </Row>
+            <Row label="Name shown">{m.name || <span className="text-bk-faint">Not set</span>}</Row>
             <Row label="Email">{m.email || <span className="text-bk-faint">None</span>}</Row>
             <Row label="Sign-in method">
               {providerLabel(provider)}
@@ -374,6 +520,9 @@ export function AccountView() {
               </Row>
             )}
             {m.projects !== undefined && <Row label="Projects">{plural(m.projects, "project")}</Row>}
+            <Row label="Browser notifications">
+              <BrowserNotificationsRow />
+            </Row>
           </dl>
         </Card>
 

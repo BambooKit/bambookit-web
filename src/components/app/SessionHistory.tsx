@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { CodeView, DiffTable } from "./CodeViews";
 import { RichText } from "./RichText";
-import { approvalTone } from "./ApprovalsView";
+import { ApprovalItem, approvalStatusLabel, approvalSummary, approvalTone, isQuestion } from "./ApprovalsView";
 import { Button, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
 import { useResource, type ApiError, type Resource } from "@/lib/api";
 import { clockTime, dateTime, formatDuration, plural, timeAgo, toMs } from "@/lib/format";
@@ -329,39 +329,21 @@ export function SummaryTab({
           <div className="border-b border-bk-line px-4 py-2.5 text-sm font-medium">Approvals</div>
           <ul className="divide-y divide-bk-line">
             {approvals.map((a) => (
-              <ApprovalRow key={a.id} approval={a} now={now} />
+              <li key={a.id} className="px-4 py-3">
+                <ApprovalItem approval={a} now={now} showSession={false} interactive={false} />
+              </li>
             ))}
           </ul>
           <p className="border-t border-bk-line px-4 py-2 text-[11px] text-bk-faint">
-            Answer approvals in BambooKit Desktop or on your phone. <Link href="/approvals/" className="underline underline-offset-2 hover:text-bk-fg">All approvals</Link>
+            Requests still waiting can be answered at the top of this page or on{" "}
+            <Link href="/approvals/" className="underline underline-offset-2 hover:text-bk-fg">
+              Approvals
+            </Link>
+            .
           </p>
         </Card>
       )}
     </div>
-  );
-}
-
-function ApprovalRow({ approval: a, now }: { approval: Approval; now: number }) {
-  return (
-    <li className="px-4 py-2.5 text-xs">
-      <div className="flex flex-wrap items-center gap-2">
-        <ShieldAlert className="size-3.5 shrink-0 text-bk-faint" />
-        <span className="min-w-0 flex-1 truncate text-sm text-bk-fg">{a.title || a.permission}</span>
-        <Pill tone={approvalTone(a.status)}>{a.status.toLowerCase()}</Pill>
-        <span className="text-bk-faint" title={dateTime(a.createdAt)}>
-          {clockTime(a.createdAt, now)}
-        </span>
-      </div>
-      {a.patterns.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-1.5 pl-5">
-          {a.patterns.map((p, i) => (
-            <code key={i} className="max-w-full truncate rounded border border-bk-line bg-bk-bg px-1.5 py-0.5 font-mono text-[11px] text-bk-muted">
-              {p}
-            </code>
-          ))}
-        </div>
-      )}
-    </li>
   );
 }
 
@@ -532,12 +514,15 @@ export function TimelineTab({ data, now, onOpenFile }: { data: SessionHistoryRes
                     <Icon className="size-2.5" />
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-bk-faint">Approval</span>
-                    <span className="min-w-0 text-sm text-bk-fg">{a.title || a.permission}</span>
-                    <Pill tone={approvalTone(a.status)}>{a.status.toLowerCase()}</Pill>
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-bk-faint">{isQuestion(a) ? "Question" : "Approval"}</span>
+                    <span className="min-w-0 break-words text-sm text-bk-fg">{approvalSummary(a)}</span>
+                    <Pill tone={approvalTone(a.status)}>{approvalStatusLabel(a)}</Pill>
                     {time && <span className="ml-auto text-xs text-bk-faint" title={dateTime(a.createdAt)}>{time}</span>}
                   </div>
-                  {a.patterns.length > 0 && <p className="mt-0.5 truncate font-mono text-[11px] text-bk-muted">{a.patterns.join("  ")}</p>}
+                  {!isQuestion(a) && a.patterns.length > 0 && <p className="mt-0.5 truncate font-mono text-[11px] text-bk-muted">{a.patterns.join("  ")}</p>}
+                  {isQuestion(a) && a.answers && a.answers.length > 0 && (
+                    <p className="mt-0.5 break-words text-xs text-bk-ok">Answer: {a.answers.map((x) => x.join(", ")).join(" · ")}</p>
+                  )}
                 </li>
               );
             }

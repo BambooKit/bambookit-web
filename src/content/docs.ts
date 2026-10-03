@@ -44,7 +44,7 @@ A small cloud service, **BambooKit Cloud** (the BambooKit API), signs you in, pa
 | Session history: summary, prompts, timeline, diffs, before/after, tests | Yes | Yes | Yes |
 | Read a session while its PC is off (7-day copy) | — | Yes | Yes |
 | Project files and diagram | Yes | Yes | No |
-| Answer approvals | Yes | Yes | No |
+| Answer approvals and questions | Yes | Yes | Yes |
 | Stop a running agent | Yes | Yes | No |
 | Send messages to the agent | Yes | No | No |
 | Edit files | Yes | No | No |
@@ -441,13 +441,15 @@ Sign in at [bambookit-web.onrender.com](https://bambookit-web.onrender.com/signi
 | [Sessions](/sessions) | Your PCs with online status and every session: status, project, model, changes, pending approvals. Search and filter by PC or status |
 | Session | Tabs **Summary**, **Prompts**, **Timeline**, **Changes** (Diff, Before, After), **Files** and **Chat**; updated live while the agent works |
 | [Devices](/devices) | Your PCs and phones, online state and last seen |
-| [Approvals](/approvals) | Permission requests, pending and answered |
-| [Account](/account) | Your profile, sign-in method, email verification, profile photo and **Delete account** |
+| [Approvals](/approvals) | Permission requests and questions from the agent, pending and answered. Answer them here |
+| [Account](/account) | Your profile, nickname, sign-in method, email verification, profile photo, browser notifications and **Delete account** |
 | [Setup](/welcome) | The steps to connect your first PC and phone |
 
 ## View only
 
-The website does not send messages, stop runs, answer approvals, browse the project tree or manage devices. Use BambooKit Desktop or the phone. Your own account (photo, deletion) is managed on the [Account](/account) page.
+The website does not send messages, stop runs, browse the project tree or manage devices. Chat in BambooKit on your PC or in the Android app. The website can answer approvals and questions, and a session's **Continue on PC** button asks your PC (when it is online) to open that session in BambooKit. Your own account (nickname, photo, deletion) is managed on the [Account](/account) page.
+
+While the website is open, notifications (questions, approvals, finished or failed sessions) appear in the corner of the page. Turn on browser notifications on the [Account](/account) page to also get them from your browser.
 
 ## Session history
 
@@ -687,7 +689,11 @@ In Desktop, **Settings → Permissions** sets each tool to **Allow**, **Ask** or
 | **Always** | This action and matching ones are allowed for the rest of the session |
 | **Deny** | The action is refused and the agent is told |
 
-Answer on the phone in the **Approvals** tab or from the notification. This website lists approvals (also in each session's timeline) but cannot answer them.
+Answer on the phone in the **Approvals** tab or from the notification, or on this website's [Approvals](/approvals) page (also at the top of the session page).
+
+## Questions
+
+Sometimes the agent asks a question instead, for example which option to use. A question shows one or more prompts with options (choose one, or several when allowed) and, when allowed, a box to type your own answer. **Submit** sends the answers once every question is answered; **Dismiss** tells the agent you won't answer.
 
 \`\`\`Diagram
 Agent asks ──► PC ──► Cloud: "Approval required" ──► phone notification
@@ -715,6 +721,7 @@ If you answer while the PC is offline, the answer waits up to 5 minutes. If the 
 | Notification | When |
 |---|---|
 | **Approval required** | The agent asks for permission |
+| **BambooKit has a question** | The agent asks you a question |
 | **Agent finished** | A session goes from working to idle |
 | **Agent failed** | A session ends with an error |
 

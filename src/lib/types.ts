@@ -65,8 +65,26 @@ export interface ChangedFile {
   deletions: number;
 }
 
+export interface QuestionOption {
+  label: string;
+  description?: string;
+}
+
+export interface Question {
+  header?: string;
+  question: string;
+  options?: QuestionOption[];
+  /** More than one option may be chosen. */
+  multiple?: boolean;
+  /** A typed answer is allowed unless this is false. */
+  custom?: boolean;
+}
+
+export type ApprovalKind = "permission" | "question";
+
 export interface Approval {
   id: string;
+  deviceId?: string;
   sessionId: string;
   sessionTitle: string | null;
   projectName: string | null;
@@ -74,6 +92,24 @@ export interface Approval {
   title: string;
   patterns: string[];
   status: string;
+  reply?: string | null;
+  /** Missing on older servers: treat as "permission". */
+  kind?: ApprovalKind;
+  questions?: Question[] | null;
+  /** One list of chosen labels (or typed text) per question, once answered. */
+  answers?: string[][] | null;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+/** A notification as sent in the realtime 'notification' event. */
+export interface AppNotification {
+  id: string;
+  type: "approval.required" | "question.asked" | "session.completed" | "session.failed" | string;
+  title: string;
+  body: string | null;
+  data: { approvalId?: string; sessionId?: string; [key: string]: unknown } | null;
+  readAt: string | null;
   createdAt: string;
 }
 
@@ -83,7 +119,10 @@ export type SignInProvider = "email" | "google" | "other";
 export interface Me {
   id: string;
   email: string | null;
+  /** Nickname if set, otherwise the name from the sign-in provider. */
   name: string | null;
+  /** The BambooKit nickname (PATCH /v1/me { name }). */
+  nickname?: string | null;
   avatarUrl: string | null;
   /** True when the photo is one the user uploaded (it can be removed). */
   avatarStored?: boolean;

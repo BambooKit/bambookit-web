@@ -21,6 +21,17 @@ export async function apiRequest<T>(
   token: string | null,
   options: { body?: unknown; signal?: AbortSignal } = {},
 ): Promise<T> {
+  const body = await apiRequestFull<{ data: T }>(method, path, token, options);
+  return body?.data as T;
+}
+
+/** Like apiRequest, but returns the whole JSON body (e.g. `{ data, deviceOnline }`). */
+export async function apiRequestFull<T>(
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  token: string | null,
+  options: { body?: unknown; signal?: AbortSignal } = {},
+): Promise<T> {
   let res: Response;
   const hasBody = options.body !== undefined;
   try {
@@ -52,7 +63,7 @@ export async function apiRequest<T>(
       (res.status === 401 ? "Your sign-in has expired. Sign in again." : `The BambooKit service answered with an error (${res.status}).`);
     throw new ApiError(res.status, code, message);
   }
-  return body?.data as T;
+  return body as T;
 }
 
 /** GET a BambooKit API path and unwrap `{ data }`. */
