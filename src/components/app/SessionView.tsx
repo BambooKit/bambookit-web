@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Brain, ChevronRight, CircleCheck, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench } from "lucide-react";
+import { ArrowLeft, Brain, ChevronRight, Check, CircleCheck, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, Pencil, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench, X } from "lucide-react";
 import { RichText } from "./RichText";
 import { ApprovalItem } from "./ApprovalsView";
+import { LikeButton } from "./LikeButton";
 import { ChangesTab, FilesTab, HistoryGate, PromptsTab, SourceBadge, SummaryTab, TimelineTab, agentLabel, touchedFiles } from "./SessionHistory";
 import { Button, ButtonLink, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, OnlineDot, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
 import { ApiError, apiRequestFull, useResource, type Resource } from "@/lib/api";
@@ -295,6 +296,151 @@ function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOn
   );
 }
 
+const TITLE_MAX = 200;
+/** How long to wait for the PC to confirm a rename before saying so. */
+const RENAME_TIMEOUT_MS = 30_000;
+
+/**
+ * The session title with a Rename action. The PC renames the session (RENAME_SESSION); the new
+ * title arrives as session.updated, so "Renaming on your PC…" stays until the title changes.
+ */
+function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnline: boolean; pcName: string }) {
+  const { getToken } = useAuth();
+  const title = session.title || "";
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(title);
+  const [tried, setTried] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [pending, setPending] = useState<{ title: string; queued: boolean } | null>(null);
+  const [slow, setSlow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // The rename is done when the session's title becomes the requested one.
+  useEffect(() => {
+    if (pending && title === pending.title) {
+      setPending(null);
+      setSlow(false);
+    }
+  }, [title, pending]);
+  useEffect(() => {
+    if (!pending || pending.queued) return;
+    const t = setTimeout(() => setSlow(true), RENAME_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [pending]);
+
+  const trimmed = value.trim();
+  const invalid = !trimmed ? "Enter a title." : trimmed.length > TITLE_MAX ? `Titles can be up to ${TITLE_MAX} characters (this one has ${trimmed.length}).` : null;
+  const unchanged = trimmed === title;
+
+  const submit = async () => {
+    setTried(true);
+    if (invalid || unchanged || sending) {
+      if (unchanged && !invalid) setEditing(false);
+      return;
+    }
+    setSending(true);
+    setError(null);
+    try {
+      const res = await apiRequestFull<{ deviceOnline?: boolean } | null>("POST", `/v1/sessions/${encodeURIComponent(session.id)}/commands`, await getToken(), {
+        body: { type: "RENAME_SESSION", payload: { title: trimmed } },
+      });
+      setPending({ title: trimmed, queued: res?.deviceOnline === false });
+      setSlow(false);
+      setEditing(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : (err as Error)?.message || "Couldn't rename the session. Try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <form
+        className="w-full space-y-1.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && !sending) setEditing(false);
+            }}
+            autoFocus
+            aria-label="Session title"
+            aria-invalid={tried && !!invalid}
+            className={cx(
+              "min-w-0 flex-1 rounded-lg border bg-bk-bg px-3 py-1.5 text-lg font-semibold text-bk-fg placeholder:text-bk-faint focus:outline-none sm:max-w-xl",
+              (tried || trimmed.length > TITLE_MAX) && invalid ? "border-bk-err/60" : "border-bk-line focus:border-bk-muted",
+            )}
+          />
+          <Button type="submit" variant="primary" className="px-3 py-1.5 text-xs" disabled={sending || !!invalid || unchanged || !pcOnline}>
+            {sending ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />} Rename
+          </Button>
+          <Button variant="ghost" className="px-3 py-1.5 text-xs" disabled={sending} onClick={() => setEditing(false)}>
+            <X className="size-3.5" /> Cancel
+          </Button>
+        </div>
+        <p className={cx("text-xs", (tried || trimmed.length > TITLE_MAX) && invalid ? "text-bk-err" : "text-bk-faint")}>
+          {(tried || trimmed.length > TITLE_MAX) && invalid
+            ? invalid
+            : !pcOnline
+              ? `${pcName} went offline. Renaming happens on your PC, so try again when it is online.`
+              : `${trimmed.length}/${TITLE_MAX} characters. ${pcName} renames the session in BambooKit.`}
+        </p>
+        {error && (
+          <Notice tone="err" icon={<TriangleAlert className="size-4" />}>
+            {error}
+          </Notice>
+        )}
+      </form>
+    );
+  }
+
+  return (
+    <>
+      <h1 className="min-w-0 break-words text-xl font-semibold tracking-tight sm:text-2xl">{title || "Untitled session"}</h1>
+      <Button
+        variant="ghost"
+        className="px-2 py-1 text-xs"
+        disabled={!pcOnline || !!pending}
+        title={pcOnline ? "Rename this session" : `${pcName} is offline. Renaming happens on your PC.`}
+        onClick={() => {
+          setValue(title);
+          setTried(false);
+          setError(null);
+          setEditing(true);
+        }}
+      >
+        <Pencil className="size-3.5" /> Rename
+      </Button>
+      {!pcOnline && !pending && <span className="text-xs text-bk-faint">Renaming needs {pcName} online</span>}
+      {pending && (
+        <span className="inline-flex items-center gap-1.5 text-xs text-bk-muted">
+          {!slow && !pending.queued && <Spinner className="size-3.5" />}
+          {pending.queued
+            ? `Renaming when ${pcName} reconnects…`
+            : slow
+              ? `${pcName} hasn't confirmed the new title yet.`
+              : "Renaming on your PC…"}
+          {(slow || pending.queued) && (
+            <button type="button" className="underline underline-offset-2 hover:text-bk-fg" onClick={() => setPending(null)}>
+              Hide
+            </button>
+          )}
+        </span>
+      )}
+    </>
+  );
+}
+
 /** Requests from this session that are waiting for an answer; answerable from here. */
 function WaitingRequests({ approvals, now }: { approvals: Resource<Approval[]>; now: number }) {
   const list = approvals.data ?? [];
@@ -469,7 +615,8 @@ export function SessionView() {
 
       <div className="mb-5">
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="min-w-0 break-words text-xl font-semibold tracking-tight sm:text-2xl">{s.title || "Untitled session"}</h1>
+          <LikeButton session={s} onChange={(starred, server) => session.setData((cur) => (cur ? { ...cur, ...(server ?? {}), starred } : cur))} className="-ml-1.5" />
+          <SessionTitle session={s} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />
           <StatusBadge status={s.status} />
           <span className={cx("inline-flex items-center gap-1.5 text-xs", isLive ? "text-bk-ok" : "text-bk-faint")} title={isLive ? "Receiving live updates from your PC" : "Not live"}>
             <OnlineDot online={isLive} /> {isLive ? "Live" : "Not live"}

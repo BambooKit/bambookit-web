@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronRight, Monitor, Search, ShieldAlert, Sparkles } from "lucide-react";
+import { ChevronRight, Heart, Monitor, Search, ShieldAlert, Sparkles } from "lucide-react";
+import { LikeButton } from "./LikeButton";
 import { ButtonLink, Changes, EmptyState, ErrorState, LoadingState, OnlineDot, PageHeader, Pill, StatusBadge, cx } from "@/components/ui";
 import { useLiveDevices, useLiveSessions, useNow, sortSessions } from "@/lib/live";
 import { timeAgo, fullDate, plural } from "@/lib/format";
@@ -61,14 +62,12 @@ function PcList({ desktops, sessions, selected, onSelect, now }: { desktops: Dev
   );
 }
 
-function SessionRow({ s, pc, now }: { s: Session; pc: Device | undefined; now: number }) {
+function SessionRow({ s, pc, now, onStarred }: { s: Session; pc: Device | undefined; now: number; onStarred: (starred: boolean, server?: Session) => void }) {
   const detail = s.status === "error" || s.status === "retry" ? s.statusMessage : s.status === "busy" ? s.currentAction : null;
   return (
-    <li>
-      <Link
-        href={`/session/?id=${encodeURIComponent(s.id)}`}
-        className="group flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-bk-raised/50 sm:items-center"
-      >
+    <li className="flex items-start gap-1 pl-2 transition-colors hover:bg-bk-raised/50 sm:items-center">
+      <LikeButton session={s} onChange={onStarred} className="mt-3 sm:mt-0" />
+      <Link href={`/session/?id=${encodeURIComponent(s.id)}`} className="group flex min-w-0 flex-1 items-start gap-3 py-3.5 pl-1 pr-4 sm:items-center">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="truncate font-medium text-bk-fg">{s.title || "Untitled session"}</span>
@@ -109,6 +108,7 @@ export function SessionsView() {
   const [pc, setPc] = useState("");
   const [status, setStatus] = useState<"" | SessionStatus>("");
   const [query, setQuery] = useState("");
+  const [liked, setLiked] = useState(false);
 
   const desktops = useMemo(() => (devices.data ?? []).filter((d) => d.kind === "desktop"), [devices.data]);
   const byId = useMemo(() => new Map(desktops.map((d) => [d.id, d])), [desktops]);
@@ -119,14 +119,15 @@ export function SessionsView() {
       (s) =>
         (!pc || s.deviceId === pc) &&
         (!status || s.status === status) &&
+        (!liked || !!s.starred) &&
         (!q || (s.title ?? "").toLowerCase().includes(q) || (s.projectName ?? "").toLowerCase().includes(q)),
     );
-  }, [all, pc, status, query]);
+  }, [all, pc, status, query, liked]);
 
   const header = (
     <PageHeader
       title="Sessions"
-      description="Every session on your PCs, updated live. View only: chat happens in BambooKit Desktop."
+      description="Every session on your PCs, updated live. View only: chat happens in BambooKit on your PC or in the Android app."
     />
   );
 
@@ -193,6 +194,18 @@ export function SessionsView() {
                 className="w-full rounded-lg border border-bk-line bg-bk-panel py-2 pl-9 pr-3 text-sm text-bk-fg placeholder:text-bk-faint focus:border-bk-muted focus:outline-none"
               />
             </label>
+            <button
+              type="button"
+              aria-pressed={liked}
+              onClick={() => setLiked((v) => !v)}
+              className={cx(
+                "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors",
+                liked ? "border-bk-err/40 bg-bk-err/10 text-bk-err" : "border-bk-line bg-bk-panel text-bk-muted hover:text-bk-fg",
+              )}
+            >
+              <Heart className={cx("size-4", liked && "fill-current")} /> Liked
+              <span className="text-xs tabular-nums opacity-80">{all.filter((x) => x.starred).length}</span>
+            </button>
             <label className="shrink-0">
               <span className="sr-only">Filter by status</span>
               <select
@@ -221,12 +234,22 @@ export function SessionsView() {
                 Start a session in BambooKit Desktop on your PC. It appears here as soon as it starts.
               </EmptyState>
             ) : (
-              <EmptyState title="No sessions match">Try another search or filter.</EmptyState>
+              <EmptyState title={liked ? "No liked sessions match" : "No sessions match"}>
+                {liked ? "Tap the heart on a session to like it. Liked sessions are easy to find with this filter." : "Try another search or filter."}
+              </EmptyState>
             )
           ) : (
             <ul className="divide-y divide-bk-line overflow-hidden rounded-xl border border-bk-line bg-bk-panel">
               {filtered.map((s) => (
-                <SessionRow key={s.id} s={s} pc={byId.get(s.deviceId)} now={now} />
+                <SessionRow
+                  key={s.id}
+                  s={s}
+                  pc={byId.get(s.deviceId)}
+                  now={now}
+                  onStarred={(starred, server) =>
+                    sessions.setData((list) => list?.map((x) => (x.id === s.id ? { ...x, ...(server ?? {}), starred } : x)))
+                  }
+                />
               ))}
             </ul>
           )}

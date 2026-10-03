@@ -40,6 +40,8 @@ export interface Session {
   remote: boolean;
   changes: { additions: number; deletions: number; files: number };
   pendingApprovals: number;
+  /** Liked (kept by BambooKit only). Missing on older servers. */
+  starred?: boolean;
   createdAt: string;
   updatedAt: string;
 }
