@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { CircleAlert, LoaderCircle, RefreshCw } from "lucide-react";
 import type { SessionStatus } from "@/lib/types";
+import { ErrorInfo } from "./ErrorInfo";
 
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -108,17 +109,35 @@ export function EmptyState({ icon, title, children, action }: { icon?: ReactNode
   );
 }
 
-export function ErrorState({ title = "Couldn't load this", message, onRetry, icon }: { title?: string; message: string; onRetry?: () => void; icon?: ReactNode }) {
+/**
+ * A failed load. Pass the error itself (ApiError or anything thrown) as `error` so the ⓘ details can
+ * explain it; `message` defaults to the error's message.
+ */
+export function ErrorState({
+  title = "Couldn't load this",
+  message,
+  error,
+  onRetry,
+  icon,
+}: {
+  title?: string;
+  message?: string;
+  error?: unknown;
+  onRetry?: () => void;
+  icon?: ReactNode;
+}) {
+  const text = message ?? (error instanceof Error ? error.message : typeof error === "string" ? error : "Something went wrong.");
   return (
     <div className="flex flex-col items-center rounded-xl border border-bk-line bg-bk-panel px-6 py-10 text-center">
       <div className="mb-3 text-bk-warn">{icon ?? <CircleAlert className="size-6" />}</div>
       <h3 className="font-medium text-bk-fg">{title}</h3>
-      <p className="mt-1 max-w-md text-sm text-bk-muted">{message}</p>
+      <p className="mt-1 max-w-md text-sm text-bk-muted">{text}</p>
       {onRetry && (
         <Button className="mt-5" onClick={onRetry}>
           <RefreshCw className="size-4" /> Retry
         </Button>
       )}
+      <ErrorInfo error={error ?? text} onRetry={onRetry} className="mt-4 max-w-lg" />
     </div>
   );
 }

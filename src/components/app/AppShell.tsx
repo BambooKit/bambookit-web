@@ -8,7 +8,7 @@ import { Wordmark } from "@/components/site/Logo";
 import { ConfigMissing } from "@/components/auth/AuthCard";
 import { LoadingState, cx } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
-import { useResource } from "@/lib/api";
+import { apiRequest, useResource } from "@/lib/api";
 import { RealtimeProvider, useLiveState, useRealtime } from "@/lib/realtime";
 import { useProfile } from "@/lib/profile";
 import { Toaster } from "./Toaster";
@@ -143,7 +143,35 @@ function UserMenu() {
   );
 }
 
+/** True once this page load has sent the browser's time zone (PATCH /v1/me { timeZone }). */
+let timeZoneSent = false;
+
+/** Coding-time weeks, months and night hours are counted in the user's time zone; send it once per load. */
+function useSendTimeZone() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    if (timeZoneSent) return;
+    let timeZone: string | undefined;
+    try {
+      timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return;
+    }
+    if (!timeZone) return;
+    timeZoneSent = true;
+    void (async () => {
+      try {
+        await apiRequest("PATCH", "/v1/me", await getToken(), { body: { timeZone } });
+      } catch {
+        // Not critical: statistics fall back to UTC. Try again on the next page load.
+        timeZoneSent = false;
+      }
+    })();
+  }, [getToken]);
+}
+
 function ShellFrame({ children }: { children: ReactNode }) {
+  useSendTimeZone();
   const pathname = usePathname() ?? "";
   const approvals = useResource<Approval[]>("/v1/approvals?status=PENDING");
   useRealtime((e) => {

@@ -46,13 +46,14 @@ export function useBrowserNotifications() {
 export function notificationHref(n: AppNotification): string | null {
   const sessionId = typeof n.data?.sessionId === "string" ? n.data.sessionId : null;
   if (n.type === "question.asked" || n.type === "approval.required") return "/approvals/";
+  if (n.type === "achievement.unlocked") return "/account/#achievements";
   if (sessionId) return `/session/?id=${encodeURIComponent(sessionId)}`;
   return null;
 }
 
 export function notificationTone(type: string): "warn" | "ok" | "err" | "neutral" {
   if (type === "question.asked" || type === "approval.required") return "warn";
-  if (type === "session.completed") return "ok";
+  if (type === "session.completed" || type === "achievement.unlocked") return "ok";
   if (type === "session.failed") return "err";
   return "neutral";
 }

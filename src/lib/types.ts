@@ -19,6 +19,10 @@ export interface Device {
   lastSeenAt: string | null;
   createdAt?: string;
   linkedDevices: LinkedDevice[];
+  /** Desktop protocol version (desktops only; older APIs omit it). */
+  protocol?: number | null;
+  /** What this desktop can do, e.g. "relay.history" (desktops only; older APIs omit it). */
+  capabilities?: string[] | null;
 }
 
 export type SessionStatus = "idle" | "busy" | "retry" | "error";
@@ -269,4 +273,82 @@ export interface StreamEvent {
   sessionId: string | null;
   deviceId: string | null;
   payload: any;
+}
+
+/* ---------------------------------------------------------------- profile statistics (GET /v1/me/stats) */
+
+export type ProjectStatus = "active" | "completed" | "archived";
+
+export interface ProjectStat {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  branch: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt: string;
+  sessions: number;
+  tasks: number;
+  filesChanged: number;
+  codingMs: number;
+}
+
+export interface CodeStats {
+  filesCreated: number;
+  filesModified: number;
+  filesDeleted: number;
+  filesRenamed: number;
+  linesAdded: number;
+  linesDeleted: number;
+  edits: number;
+  testsRun: number;
+  testsPassed: number;
+  testsFailed: number;
+  commits: number;
+  deployments: number;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+  unit: "count" | "ms";
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface ProfileStats {
+  timeZone: string;
+  memberSince: string | null;
+  projects: { total: number; active: number; completed: number; archived: number; list: ProjectStat[] };
+  sessions: { total: number; withCompletedWork: number };
+  tasks: { total: number; completed: number; failed: number; debugging: number };
+  codingTime: { totalMs: number; thisWeekMs: number; thisMonthMs: number; nightMs: number; longestMs: number };
+  code: CodeStats;
+  rules: { codingTime: string; files: string; nightHours: string };
+  achievements: Achievement[];
+}
+
+/* ---------------------------------------------------------------- service info */
+
+export interface ApiMeta {
+  service: string;
+  apiVersion: string;
+  protocol: number;
+  desktopRequirements: Record<string, { since: string; capability: string; reason: string }>;
+}
+
+export type ReleasePlatform = "windows" | "android";
+
+export interface Release {
+  platform: ReleasePlatform;
+  version: string;
+  tag: string;
+  name: string | null;
+  publishedAt: string | null;
+  notes: string;
+  url: string;
+  download: { name: string; url: string; size: number } | null;
 }

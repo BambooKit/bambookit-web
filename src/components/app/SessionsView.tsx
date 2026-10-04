@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { ChevronRight, Heart, Monitor, Search, ShieldAlert, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, FolderGit2, Heart, Monitor, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { LikeButton } from "./LikeButton";
 import { ButtonLink, Changes, EmptyState, ErrorState, LoadingState, OnlineDot, PageHeader, Pill, StatusBadge, cx } from "@/components/ui";
 import { useLiveDevices, useLiveSessions, useNow, sortSessions } from "@/lib/live";
@@ -109,6 +109,17 @@ export function SessionsView() {
   const [status, setStatus] = useState<"" | SessionStatus>("");
   const [query, setQuery] = useState("");
   const [liked, setLiked] = useState(false);
+  // ?project=<id> (from the Account page's project list) shows only that project's sessions.
+  const [project, setProject] = useState("");
+  useEffect(() => {
+    setProject(new URLSearchParams(window.location.search).get("project") ?? "");
+  }, []);
+  const clearProject = () => {
+    setProject("");
+    const url = new URL(window.location.href);
+    url.searchParams.delete("project");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  };
 
   const desktops = useMemo(() => (devices.data ?? []).filter((d) => d.kind === "desktop"), [devices.data]);
   const byId = useMemo(() => new Map(desktops.map((d) => [d.id, d])), [desktops]);
@@ -117,12 +128,14 @@ export function SessionsView() {
     const q = query.trim().toLowerCase();
     return all.filter(
       (s) =>
+        (!project || s.projectId === project) &&
         (!pc || s.deviceId === pc) &&
         (!status || s.status === status) &&
         (!liked || !!s.starred) &&
         (!q || (s.title ?? "").toLowerCase().includes(q) || (s.projectName ?? "").toLowerCase().includes(q)),
     );
-  }, [all, pc, status, query, liked]);
+  }, [all, pc, status, query, liked, project]);
+  const projectName = project ? (all.find((s) => s.projectId === project)?.projectName ?? "this project") : null;
 
   const header = (
     <PageHeader
@@ -145,7 +158,7 @@ export function SessionsView() {
       <>
         {header}
         <ErrorState
-          message={error.message}
+          error={error}
           onRetry={() => {
             devices.reload();
             sessions.reload();
@@ -221,6 +234,16 @@ export function SessionsView() {
               </select>
             </label>
           </div>
+          {projectName && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+              <Pill className="gap-1.5 py-1 text-xs">
+                <FolderGit2 className="size-3.5" /> Project: {projectName}
+                <button type="button" onClick={clearProject} aria-label="Show all projects" className="ml-0.5 hover:text-bk-fg">
+                  <X className="size-3.5" />
+                </button>
+              </Pill>
+            </div>
+          )}
           <div className="mb-2 flex items-center justify-between px-1 text-xs text-bk-faint">
             <span>
               {plural(filtered.length, "session")}

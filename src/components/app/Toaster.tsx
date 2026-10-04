@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, CircleCheck, CircleHelp, CircleX, ShieldAlert, X } from "lucide-react";
+import { Bell, CircleCheck, CircleHelp, CircleX, ShieldAlert, Trophy, X } from "lucide-react";
 import { cx } from "@/components/ui";
 import { useRealtime } from "@/lib/realtime";
 import { notificationHref, notificationTone, showBrowserNotification } from "@/lib/notifications";
@@ -16,6 +16,7 @@ const ICON = {
   "approval.required": ShieldAlert,
   "session.completed": CircleCheck,
   "session.failed": CircleX,
+  "achievement.unlocked": Trophy,
 } as Record<string, typeof Bell>;
 
 const TONE_CLS = {

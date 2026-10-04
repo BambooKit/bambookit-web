@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, Terminal } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { CodeBlock } from "@/components/site/CodeBlock";
+import { LatestReleases } from "@/components/Releases";
 import { INSTALL_COMMAND, LINKS } from "@/lib/config";
 
 const PRODUCTS = [
@@ -204,6 +205,11 @@ export default function Home() {
                 </li>
               </ol>
             </div>
+          </div>
+          <div id="downloads" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6">
+            <h3 className="text-lg font-medium">Latest versions</h3>
+            <p className="mt-1 text-sm text-bk-muted">Download the newest release directly, with its release notes.</p>
+            <LatestReleases className="mt-4" />
           </div>
         </section>
 

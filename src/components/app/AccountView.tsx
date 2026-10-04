@@ -6,9 +6,12 @@ import { Bell, Camera, Check, CircleCheck, LogOut, MailWarning, Pencil, Trash2, 
 import { useLeaveApp } from "./AppShell";
 import { Button, Card, ErrorState, LoadingState, Notice, PageHeader, Pill, Spinner, cx } from "@/components/ui";
 import { ApiError, apiRequest } from "@/lib/api";
+import { InlineError } from "@/components/ErrorInfo";
 import { useAuth } from "@/lib/auth";
 import { fullDate, plural, timeAgo } from "@/lib/format";
-import { useNow } from "@/lib/live";
+import { useLiveDevices, useNow } from "@/lib/live";
+import { LatestReleases } from "@/components/Releases";
+import { ProfileStats } from "./ProfileStats";
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, DELETE_CONFIRMATION, NICKNAME_MAX, notifyProfileChanged, useProfile } from "@/lib/profile";
 import { useBrowserNotifications } from "@/lib/notifications";
 import type { AvatarUpload, Me } from "@/lib/types";
@@ -69,7 +72,7 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
   const { getToken } = useAuth();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [done, setDone] = useState<string | null>(null);
   const storage = me.cloudStorage !== false;
 
@@ -96,7 +99,7 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
       onChanged(result.profile ?? { avatarUrl: result.avatarUrl, avatarStored: true });
       setDone("Profile photo updated.");
     } catch (err) {
-      setError(friendlyError(err));
+      setError(err);
     } finally {
       setBusy(null);
       if (input.current) input.current.value = "";
@@ -112,7 +115,7 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
       onChanged(result?.profile ?? null);
       setDone("Profile photo removed.");
     } catch (err) {
-      setError(friendlyError(err));
+      setError(err);
     } finally {
       setBusy(null);
     }
@@ -151,11 +154,7 @@ function ProfileCard({ me, onChanged }: { me: Me; onChanged: (patch: Partial<Me>
           </p>
         </div>
       </div>
-      {error && (
-        <Notice tone="err" className="mt-4" icon={<TriangleAlert className="size-4" />}>
-          {error}
-        </Notice>
-      )}
+      <InlineError error={error} message={error ? friendlyError(error) : null} className="mt-4" />
       {done && !error && (
         <Notice tone="ok" className="mt-4" icon={<CircleCheck className="size-4" />}>
           {done}
@@ -181,7 +180,7 @@ function NicknameField({ me, onSaved }: { me: Me; onSaved: (profile: Me) => void
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(current);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (!editing) setValue(current);
@@ -201,7 +200,7 @@ function NicknameField({ me, onSaved }: { me: Me; onSaved: (profile: Me) => void
       setEditing(false);
       setSaved(true);
     } catch (err) {
-      setError(friendlyError(err));
+      setError(err);
     } finally {
       setBusy(false);
     }
@@ -269,11 +268,7 @@ function NicknameField({ me, onSaved }: { me: Me; onSaved: (profile: Me) => void
       <p className={cx("text-xs", invalid ? "text-bk-err" : "text-bk-faint")}>
         {invalid ?? `${value.trim().length}/${NICKNAME_MAX} characters. Shown in BambooKit on all your devices. Leave it empty to use your sign-in name.`}
       </p>
-      {error && error !== invalid && (
-        <Notice tone="err" icon={<TriangleAlert className="size-4" />}>
-          {error}
-        </Notice>
-      )}
+      {error !== invalid && <InlineError error={error} message={error ? friendlyError(error) : null} />}
     </form>
   );
 }
@@ -331,7 +326,7 @@ function VerificationStatus({ me }: { me: Me }) {
             {state === "sending" ? "Sending…" : "Send verification email"}
           </button>
         ))}
-      {state !== "idle" && state !== "sending" && state !== "sent" && <span className="text-xs text-bk-err">{state}</span>}
+      {state !== "idle" && state !== "sending" && state !== "sent" && <InlineError error={state} className="w-full text-xs" />}
     </span>
   );
 }
@@ -341,7 +336,7 @@ function DangerZone({ me }: { me: Me }) {
   const leave = useLeaveApp();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ err: unknown; message: string } | null>(null);
   const available = me.accountDeletion !== false;
   const google = me.provider === "google";
   const ready = typed === DELETE_CONFIRMATION && available && !busy;
@@ -392,7 +387,7 @@ function DangerZone({ me }: { me: Me }) {
                 await leave("/");
               } catch (err) {
                 const message = friendlyError(err);
-                setError(err instanceof ApiError && err.code === "IDENTITY_DELETE_FAILED" && google ? `${message} Signing out and in again usually fixes this.` : message);
+                setError({ err, message: err instanceof ApiError && err.code === "IDENTITY_DELETE_FAILED" && google ? `${message} Signing out and in again usually fixes this.` : message });
                 setBusy(false);
               }
             }}
@@ -410,11 +405,7 @@ function DangerZone({ me }: { me: Me }) {
                 className="w-full max-w-sm rounded-lg border border-bk-line bg-bk-bg px-3 py-2 font-mono text-sm text-bk-fg placeholder:text-bk-faint focus:border-bk-err/60 focus:outline-none"
               />
             </label>
-            {error && (
-              <Notice tone="err" icon={<TriangleAlert className="size-4" />}>
-                {error}
-              </Notice>
-            )}
+            <InlineError error={error?.err} message={error?.message} />
             <Button
               type="submit"
               disabled={!ready}
@@ -434,7 +425,24 @@ export function AccountView() {
   const { user } = useAuth();
   const leave = useLeaveApp();
   const now = useNow();
+  const devices = useLiveDevices();
   const [signingOut, setSigningOut] = useState(false);
+  const loaded = !!me.data;
+
+  // Sections load after the page, so scroll to #downloads / #achievements once they exist.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!loaded || !id) return;
+    let tries = 0;
+    const t = setInterval(() => {
+      const el = document.getElementById(id);
+      if (el || ++tries > 20) {
+        clearInterval(t);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 150);
+    return () => clearInterval(t);
+  }, [loaded]);
 
   const signOutButton = (
     <Button
@@ -452,7 +460,7 @@ export function AccountView() {
     return (
       <>
         <PageHeader title="Account" actions={signOutButton} />
-        <ErrorState message={me.error.message} onRetry={me.reload} />
+        <ErrorState error={me.error} onRetry={me.reload} />
       </>
     );
   }
@@ -463,7 +471,7 @@ export function AccountView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Account" description="Your BambooKit profile and sign-in." actions={signOutButton} />
+      <PageHeader title="Account" description="Your BambooKit profile, statistics, downloads and sign-in." actions={signOutButton} />
       <div className="space-y-5">
         <ProfileCard
           me={m}
@@ -525,6 +533,14 @@ export function AccountView() {
             </Row>
           </dl>
         </Card>
+
+        <ProfileStats now={now} />
+
+        <section id="downloads" className="scroll-mt-20">
+          <h2 className="mb-1 font-medium text-bk-fg">Downloads and updates</h2>
+          <p className="mb-3 text-sm text-bk-muted">The latest BambooKit releases, and whether your PCs are up to date.</p>
+          <LatestReleases desktops={(devices.data ?? []).filter((d) => d.kind === "desktop")} />
+        </section>
 
         <DangerZone me={m} />
       </div>

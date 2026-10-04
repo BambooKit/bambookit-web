@@ -14,6 +14,7 @@ import {
   Files,
   FlaskConical,
   Globe,
+  MonitorUp,
   ListChecks,
   MessageSquare,
   Radio,
@@ -26,6 +27,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { CodeView, DiffTable } from "./CodeViews";
+import { ErrorInfo } from "@/components/ErrorInfo";
 import { RichText } from "./RichText";
 import { ApprovalItem, approvalStatusLabel, approvalSummary, approvalTone, isQuestion } from "./ApprovalsView";
 import { Button, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
@@ -101,11 +103,15 @@ export function SourceBadge({ data, now }: { data: SessionHistoryResponse | unde
 function HistoryError({ error, onRetry }: { error: ApiError; onRetry: () => void }) {
   const offline = error.code === "DESKTOP_OFFLINE";
   const timeout = error.code === "DESKTOP_TIMEOUT";
+  const update = error.code === "DESKTOP_UPDATE_REQUIRED";
   return (
     <ErrorState
-      icon={offline ? <WifiOff className="size-6" /> : undefined}
-      title={offline ? "Your PC is offline" : timeout ? "Your PC didn't answer in time" : "Couldn't load the session history"}
+      icon={offline ? <WifiOff className="size-6" /> : update ? <MonitorUp className="size-6" /> : undefined}
+      title={
+        offline ? "Your PC is offline" : timeout ? "Your PC didn't answer in time" : update ? "Update BambooKit Desktop" : "Couldn't load the session history"
+      }
       message={offline ? `${error.message} It loads automatically when the PC comes back online.` : error.message}
+      error={error}
       onRetry={onRetry}
     />
   );
@@ -123,6 +129,7 @@ export function HistoryGate({ history, children }: { history: Resource<SessionHi
           <button type="button" className="underline underline-offset-2" onClick={history.reload}>
             Retry
           </button>
+          <ErrorInfo error={history.error} onRetry={history.reload} className="mt-1" />
         </Notice>
       )}
       {children(history.data)}
@@ -596,7 +603,7 @@ function VersionPane({
       ? "Before and after need your PC online: full file versions are read live from your PC and are never saved in the cloud. The diff is still available from the session record."
       : "File contents need your PC online: they are read live from your PC and are never saved in the cloud. Open BambooKit Desktop on that PC to see them here.";
   if (!pcOnline || res.error?.code === "DESKTOP_OFFLINE") return <NeedsPc>{offlineText}</NeedsPc>;
-  if (res.error && !res.data) return <ErrorState title="Couldn't load this file" message={res.error.message} onRetry={res.reload} />;
+  if (res.error && !res.data) return <ErrorState title="Couldn't load this file" error={res.error} onRetry={res.reload} />;
   if (!res.data) {
     return (
       <div className="flex items-center justify-center gap-2 px-4 py-10 text-xs text-bk-muted">

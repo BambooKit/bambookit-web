@@ -37,7 +37,12 @@ export function LikeButton({
       onChange(server?.starred ?? next, server ?? undefined);
     } catch (err) {
       onChange(starred);
-      setError(err instanceof ApiError ? err.message : "Couldn't save. Try again.");
+      // Shown as the tooltip; include the code and request ID so the problem can be reported.
+      setError(
+        err instanceof ApiError
+          ? `${err.message} (${[err.code, err.status ? `HTTP ${err.status}` : null, err.requestId ? `request ${err.requestId}` : null].filter(Boolean).join(", ")})`
+          : "Couldn't save. Try again.",
+      );
     } finally {
       setBusy(false);
     }

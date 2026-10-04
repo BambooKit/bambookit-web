@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { API_URL } from "./config";
+import { API_URL, CLIENT_HEADER } from "./config";
 import { useAuth } from "./auth";
 import type { StreamEvent } from "./types";
 
@@ -105,7 +105,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         if (lastId !== null) qs.set("after", String(lastId));
         bump();
         const res = await fetch(`${API_URL}/v1/realtime/stream?${qs}`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream" },
+          headers: { Authorization: `Bearer ${token}`, Accept: "text/event-stream", ...CLIENT_HEADER },
           cache: "no-store",
           signal: current.signal,
         });

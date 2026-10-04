@@ -6,6 +6,7 @@ import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { Markdown, docHeadings } from "@/components/site/Markdown";
 import { ORDERED_DOCS, SECTIONS, findDoc, type DocPage } from "@/content/docs";
 import { cx } from "@/components/ui";
+import { LatestReleases } from "@/components/Releases";
 
 type Params = { slug?: string[] };
 
@@ -87,6 +88,12 @@ export default async function DocsPage({ params }: { params: Promise<Params> }) 
             <div className="text-xs font-medium uppercase tracking-wider text-bk-faint">{doc.section}</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{doc.title}</h1>
             {doc.summary && <p className="mt-3 text-lg leading-relaxed text-bk-muted">{doc.summary}</p>}
+            {(doc.slug === "install" || doc.slug === "updates") && (
+              <div id="downloads" className="mt-6 scroll-mt-20">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-bk-faint">Latest versions</div>
+                <LatestReleases />
+              </div>
+            )}
             <Markdown source={doc.body} />
           </article>
 

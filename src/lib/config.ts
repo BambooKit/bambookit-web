@@ -8,6 +8,12 @@ export const API_URL = (
   (process.env.NODE_ENV === "production" ? "https://bambookit-api.onrender.com" : "http://localhost:8080")
 ).replace(/\/+$/, "");
 
+/** This website's version (package.json), inlined at build time. */
+export const WEB_VERSION = process.env.NEXT_PUBLIC_WEB_VERSION || "dev";
+
+/** Sent with every API request so the API can log which client called it. */
+export const CLIENT_HEADER = { "X-BK-Client": `web/${WEB_VERSION}` } as const;
+
 export interface SupabaseConfig {
   url: string;
   key: string;

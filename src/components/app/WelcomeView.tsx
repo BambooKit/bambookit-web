@@ -60,7 +60,7 @@ export function WelcomeView() {
         </p>
       </div>
 
-      {devices.error && !devices.data && <ErrorState message={devices.error.message} onRetry={devices.reload} />}
+      {devices.error && !devices.data && <ErrorState error={devices.error} onRetry={devices.reload} />}
 
       {hasPc && (
         <Notice tone="ok" className="mb-6" icon={<Check className="size-4" />}>

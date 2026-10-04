@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { Check, CheckCheck, CircleHelp, ShieldAlert, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { Button, EmptyState, ErrorState, LoadingState, Notice, PageHeader, Pill, Spinner, cx } from "@/components/ui";
 import { ApiError, apiRequestFull, useResource } from "@/lib/api";
+import { InlineError } from "@/components/ErrorInfo";
 import { useAuth } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { useNow } from "@/lib/live";
@@ -253,7 +254,7 @@ export function ApprovalItem({
   const { getToken } = useAuth();
   const [local, setLocal] = useState<Approval | null>(null);
   const [busy, setBusy] = useState<"once" | "always" | "reject" | "answer" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [queued, setQueued] = useState(false);
   // A newer copy from the server wins over the local one once it has moved on from PENDING.
   useEffect(() => {
@@ -276,7 +277,7 @@ export function ApprovalItem({
       setQueued(res.deviceOnline === false);
       onChanged?.();
     } catch (err) {
-      setError(friendlyError(err));
+      setError(err);
       if (err instanceof ApiError && err.code === "APPROVAL_NOT_PENDING") onChanged?.();
     } finally {
       setBusy(null);
@@ -358,11 +359,7 @@ export function ApprovalItem({
           {queued ? "Your PC is offline. Your reply is sent when BambooKit on the PC reconnects." : "Sending your reply to your PC…"}
         </p>
       )}
-      {error && (
-        <Notice tone="err" className="mt-3" icon={<TriangleAlert className="size-4" />}>
-          {error}
-        </Notice>
-      )}
+      <InlineError error={error} message={error ? friendlyError(error) : null} className="mt-3" />
     </div>
   );
 }
@@ -400,7 +397,7 @@ export function ApprovalsView() {
         ))}
       </div>
       {approvals.error && !approvals.data ? (
-        <ErrorState message={approvals.error.message} onRetry={approvals.reload} />
+        <ErrorState error={approvals.error} onRetry={approvals.reload} />
       ) : !approvals.data ? (
         <LoadingState slow={approvals.slow} />
       ) : approvals.data.length === 0 ? (

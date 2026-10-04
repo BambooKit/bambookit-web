@@ -3,10 +3,14 @@
 import { Monitor, Smartphone } from "lucide-react";
 import { ButtonLink, Card, EmptyState, ErrorState, LoadingState, OnlineDot, PageHeader } from "@/components/ui";
 import { useLiveDevices, useNow } from "@/lib/live";
+import { FALLBACK_REQUIREMENTS, useMeta } from "@/lib/compat";
+import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
 import { fullDate, timeAgo } from "@/lib/format";
 import type { Device } from "@/lib/types";
 
 function DeviceCard({ d, now }: { d: Device; now: number }) {
+  const meta = useMeta();
+  const features = Object.keys(meta?.desktopRequirements ?? FALLBACK_REQUIREMENTS);
   const Icon = d.kind === "desktop" ? Monitor : Smartphone;
   return (
     <Card className="p-4">
@@ -20,7 +24,7 @@ function DeviceCard({ d, now }: { d: Device; now: number }) {
             <OnlineDot online={d.online} />
           </div>
           <div className="mt-0.5 text-xs text-bk-faint">
-            {[d.platform, d.appVersion && `v${d.appVersion}`].filter(Boolean).join(" · ") || (d.kind === "desktop" ? "PC" : "Phone")}
+            {[d.platform, d.appVersion && `v${d.appVersion}`, d.kind === "desktop" && d.protocol ? `protocol ${d.protocol}` : null].filter(Boolean).join(" · ") || (d.kind === "desktop" ? "PC" : "Phone")}
           </div>
         </div>
         <span className={d.online ? "text-xs text-bk-ok" : "text-xs text-bk-faint"} title={fullDate(d.lastSeenAt)}>
@@ -37,6 +41,7 @@ function DeviceCard({ d, now }: { d: Device; now: number }) {
           <span className="text-bk-faint">{d.kind === "desktop" ? "No phone paired" : "Not paired with a PC"}</span>
         )}
       </div>
+      {d.kind === "desktop" && <DesktopUpdateNotice device={d} features={features} className="mt-3" />}
     </Card>
   );
 }
@@ -54,7 +59,7 @@ export function DevicesView() {
     return (
       <>
         {header}
-        <ErrorState message={devices.error.message} onRetry={devices.reload} />
+        <ErrorState error={devices.error} onRetry={devices.reload} />
       </>
     );
   }

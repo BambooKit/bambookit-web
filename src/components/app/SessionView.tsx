@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Brain, ChevronRight, Check, CircleCheck, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, Pencil, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench, X } from "lucide-react";
 import { RichText } from "./RichText";
+import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
+import { ErrorInfo, InlineError } from "@/components/ErrorInfo";
 import { ApprovalItem } from "./ApprovalsView";
 import { LikeButton } from "./LikeButton";
 import { ChangesTab, FilesTab, HistoryGate, PromptsTab, SourceBadge, SummaryTab, TimelineTab, agentLabel, touchedFiles } from "./SessionHistory";
@@ -26,7 +28,8 @@ function sortParts(parts: Part[]): Part[] {
 function PcError({ error, onRetry, compact, what }: { error: ApiError; onRetry: () => void; compact?: boolean; what: string }) {
   const offline = error.code === "DESKTOP_OFFLINE";
   const timeout = error.code === "DESKTOP_TIMEOUT";
-  const title = offline ? "Your PC is offline" : timeout ? "Your PC didn't answer in time" : `Couldn't load the ${what}`;
+  const update = error.code === "DESKTOP_UPDATE_REQUIRED";
+  const title = offline ? "Your PC is offline" : timeout ? "Your PC didn't answer in time" : update ? "Update BambooKit Desktop" : `Couldn't load the ${what}`;
   const message = offline
     ? `${error.message} It loads automatically when the PC comes back online.`
     : error.message;
@@ -40,10 +43,11 @@ function PcError({ error, onRetry, compact, what }: { error: ApiError; onRetry: 
         <Button className="mt-3 px-3 py-1.5 text-xs" onClick={onRetry}>
           <RefreshCw className="size-3.5" /> Retry
         </Button>
+        <ErrorInfo error={error} onRetry={onRetry} className="mt-3" />
       </div>
     );
   }
-  return <ErrorState icon={offline ? <WifiOff className="size-6" /> : undefined} title={title} message={message} onRetry={onRetry} />;
+  return <ErrorState icon={offline ? <WifiOff className="size-6" /> : undefined} title={title} message={message} error={error} onRetry={onRetry} />;
 }
 
 function ToolRow({ part }: { part: Part }) {
@@ -171,6 +175,7 @@ function ChatPanel({ parts, busy }: { parts: Resource<Part[]>; busy: boolean }) 
             <button type="button" className="underline underline-offset-2" onClick={parts.reload}>
               Retry
             </button>
+            <ErrorInfo error={parts.error} onRetry={parts.reload} className="mt-1" />
           </Notice>
         )}
       </div>
@@ -251,7 +256,7 @@ function affectsHistory(type: string, payload: any): boolean {
 function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOnline: boolean; pcName: string }) {
   const { getToken } = useAuth();
   const [state, setState] = useState<"idle" | "busy" | "sent" | "queued">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const send = async () => {
     setState("busy");
     setError(null);
@@ -261,7 +266,7 @@ function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOn
       });
       setState(res?.deviceOnline === false ? "queued" : "sent");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : (err as Error)?.message || "Couldn't reach your PC. Try again.");
+      setError(err instanceof ApiError || (err as Error)?.message ? err : "Couldn't reach your PC. Try again.");
       setState("idle");
     }
   };
@@ -287,11 +292,7 @@ function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOn
           {state === "sent" ? `Asked ${pcName} to open this session in BambooKit.` : `${pcName} will open this session when BambooKit on it reconnects.`}
         </Notice>
       )}
-      {error && (
-        <Notice tone="err" className="mt-3" icon={<TriangleAlert className="size-4" />}>
-          {error}
-        </Notice>
-      )}
+      <InlineError error={error} className="mt-3" onRetry={() => void send()} />
     </Card>
   );
 }
@@ -313,7 +314,7 @@ function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnlin
   const [sending, setSending] = useState(false);
   const [pending, setPending] = useState<{ title: string; queued: boolean } | null>(null);
   const [slow, setSlow] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
 
   // The rename is done when the session's title becomes the requested one.
   useEffect(() => {
@@ -348,7 +349,7 @@ function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnlin
       setSlow(false);
       setEditing(false);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : (err as Error)?.message || "Couldn't rename the session. Try again.");
+      setError(err instanceof ApiError || (err as Error)?.message ? err : "Couldn't rename the session. Try again.");
     } finally {
       setSending(false);
     }
@@ -395,11 +396,7 @@ function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnlin
               ? `${pcName} went offline. Renaming happens on your PC, so try again when it is online.`
               : `${trimmed.length}/${TITLE_MAX} characters. ${pcName} renames the session in BambooKit.`}
         </p>
-        {error && (
-          <Notice tone="err" icon={<TriangleAlert className="size-4" />}>
-            {error}
-          </Notice>
-        )}
+        <InlineError error={error} />
       </form>
     );
   }
@@ -591,7 +588,7 @@ export function SessionView() {
         </EmptyState>
       );
     }
-    return <ErrorState message={session.error.message} onRetry={session.reload} />;
+    return <ErrorState error={session.error} onRetry={session.reload} />;
   }
   if (!session.data) return <LoadingState slow={session.slow} label="Loading session…" />;
 
@@ -665,6 +662,8 @@ export function SessionView() {
           {s.statusMessage}
         </Notice>
       )}
+
+      <DesktopUpdateNotice device={pc} features={["history", "fileversions"]} className="mb-4" />
 
       <div role="tablist" aria-label="Session views" className="mb-5 flex gap-1 overflow-x-auto border-b border-bk-line">
         {TABS.map((t) => (

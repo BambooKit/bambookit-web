@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site/Chrome";
 import { Mark } from "@/components/site/Logo";
 import { Button, Spinner } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { ErrorInfo } from "@/components/ErrorInfo";
 import { apiGet } from "@/lib/api";
 import type { Device } from "@/lib/types";
 
@@ -44,11 +45,15 @@ export function Field({ label, hint, ...props }: InputHTMLAttributes<HTMLInputEl
   );
 }
 
-export function FormError({ children }: { children: ReactNode }) {
+/** A form error with the ⓘ details. Sign-in errors come from the sign-in provider, not the BambooKit API. */
+export function FormError({ children, error }: { children: ReactNode; error?: unknown }) {
   return (
-    <div role="alert" className="flex items-start gap-2 rounded-lg border border-bk-err/30 bg-bk-err/5 px-3 py-2 text-sm text-bk-err">
-      <CircleAlert className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0">{children}</div>
+    <div role="alert" className="rounded-lg border border-bk-err/30 bg-bk-err/5 px-3 py-2 text-sm">
+      <div className="flex items-start gap-2 text-bk-err">
+        <CircleAlert className="mt-0.5 size-4 shrink-0" />
+        <div className="min-w-0">{children}</div>
+      </div>
+      <ErrorInfo error={error ?? (typeof children === "string" ? children : "The sign-in service reported an error.")} className="mt-1 pl-6" />
     </div>
   );
 }

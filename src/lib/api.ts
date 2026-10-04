@@ -1,44 +1,81 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { API_URL } from "./config";
+import { API_URL, CLIENT_HEADER } from "./config";
 import { useAuth } from "./auth";
 
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+/** Request facts kept with an error for the ⓘ diagnostics. Never holds tokens or request bodies. */
+export interface ApiErrorContext {
+  method?: string;
+  /** API path without query values that could be sensitive. */
+  path?: string;
+  requestId?: string | null;
+  /** From the X-BambooKit-API response header. */
+  apiVersion?: string | null;
+  details?: unknown;
+  at?: string;
+}
+
 export class ApiError extends Error {
+  method?: string;
+  path?: string;
+  requestId?: string | null;
+  apiVersion?: string | null;
+  details?: unknown;
+  at: string;
   constructor(
     public status: number,
     public code: string,
     message: string,
+    context: ApiErrorContext = {},
   ) {
     super(message);
+    this.method = context.method;
+    this.path = context.path;
+    this.requestId = context.requestId ?? null;
+    this.apiVersion = context.apiVersion ?? null;
+    this.details = context.details;
+    this.at = context.at ?? new Date().toISOString();
   }
 }
 
+/** The API version from the most recent response (X-BambooKit-API), for diagnostics. */
+let lastApiVersion: string | null = null;
+export function lastSeenApiVersion(): string | null {
+  return lastApiVersion;
+}
+
+const SECRET_PARAM = /^(token|access_token|refresh_token|code|key|signature|sig|password|secret)$/i;
+
+/** The path with any credential-like query values replaced, safe to show and copy. */
+export function safePath(path: string): string {
+  const q = path.indexOf("?");
+  if (q === -1) return path;
+  const params = new URLSearchParams(path.slice(q + 1));
+  for (const k of [...params.keys()]) if (SECRET_PARAM.test(k)) params.set(k, "[hidden]");
+  const rest = params.toString();
+  return rest ? `${path.slice(0, q)}?${decodeURIComponent(rest)}` : path.slice(0, q);
+}
+
 /** Call a BambooKit API path and unwrap `{ data }`. Errors become ApiError with the API's code and message. */
-export async function apiRequest<T>(
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
-  path: string,
-  token: string | null,
-  options: { body?: unknown; signal?: AbortSignal } = {},
-): Promise<T> {
+export async function apiRequest<T>(method: Method, path: string, token: string | null, options: { body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
   const body = await apiRequestFull<{ data: T }>(method, path, token, options);
   return body?.data as T;
 }
 
 /** Like apiRequest, but returns the whole JSON body (e.g. `{ data, deviceOnline }`). */
-export async function apiRequestFull<T>(
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
-  path: string,
-  token: string | null,
-  options: { body?: unknown; signal?: AbortSignal } = {},
-): Promise<T> {
+export async function apiRequestFull<T>(method: Method, path: string, token: string | null, options: { body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
   let res: Response;
   const hasBody = options.body !== undefined;
+  const ctx: ApiErrorContext = { method, path: safePath(path), apiVersion: lastApiVersion };
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers: {
         Accept: "application/json",
+        ...CLIENT_HEADER,
         ...(hasBody ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
@@ -48,8 +85,10 @@ export async function apiRequestFull<T>(
     });
   } catch (err) {
     if ((err as Error)?.name === "AbortError") throw err;
-    throw new ApiError(0, "NETWORK", "Can't reach the BambooKit service. Check your connection and try again.");
+    throw new ApiError(0, "NETWORK", "Can't reach the BambooKit service. Check your connection and try again.", ctx);
   }
+  const version = res.headers.get("X-BambooKit-API");
+  if (version) lastApiVersion = version;
   let body: any = null;
   try {
     body = await res.json();
@@ -61,7 +100,12 @@ export async function apiRequestFull<T>(
     const message =
       body?.error?.message ??
       (res.status === 401 ? "Your sign-in has expired. Sign in again." : `The BambooKit service answered with an error (${res.status}).`);
-    throw new ApiError(res.status, code, message);
+    throw new ApiError(res.status, code, message, {
+      ...ctx,
+      apiVersion: version,
+      requestId: body?.requestId ?? res.headers.get("X-Request-Id"),
+      details: body?.error?.details,
+    });
   }
   return body as T;
 }
@@ -110,7 +154,7 @@ export function useResource<T>(path: string | null): Resource<T> {
         setError(null);
       } catch (err) {
         if (ctrl.signal.aborted || (err as Error)?.name === "AbortError") return;
-        setError(err instanceof ApiError ? err : new ApiError(0, "UNKNOWN", (err as Error)?.message ?? "Something went wrong."));
+        setError(err instanceof ApiError ? err : new ApiError(0, "UNKNOWN", (err as Error)?.message ?? "Something went wrong.", { method: "GET", path: safePath(path) }));
       } finally {
         clearTimeout(slowTimer);
         if (!ctrl.signal.aborted) {

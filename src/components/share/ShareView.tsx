@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { Brain, ChevronRight, Wrench } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { RichText } from "@/components/app/RichText";
-import { Button, LoadingState, cx } from "@/components/ui";
-import { API_URL } from "@/lib/config";
+import { ErrorState, LoadingState, cx } from "@/components/ui";
+import { ApiError } from "@/lib/api";
+import { API_URL, CLIENT_HEADER } from "@/lib/config";
 
 type Item = { type: string; data: any };
 
-type State = { kind: "loading" } | { kind: "missing" } | { kind: "error"; message: string } | { kind: "ok"; items: Item[] };
+type State = { kind: "loading" } | { kind: "missing" } | { kind: "error"; error: unknown } | { kind: "ok"; items: Item[] };
 
 /** The share id is the last path segment (/share/<id>, via the host's rewrite) or ?id=<id>. */
 function shareIdFromLocation(): string | null {
@@ -21,9 +22,24 @@ function shareIdFromLocation(): string | null {
 }
 
 async function load(id: string): Promise<Item[] | null> {
-  const res = await fetch(`${API_URL}/api/share/${encodeURIComponent(id)}/data`, { cache: "no-store" });
+  // The share id works like a link password, so diagnostics show a placeholder instead.
+  const ctx = { method: "GET", path: "/api/share/[share id]/data" };
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/share/${encodeURIComponent(id)}/data`, { cache: "no-store", headers: { ...CLIENT_HEADER } });
+  } catch {
+    throw new ApiError(0, "NETWORK", "Can't reach the BambooKit service. Check your connection and try again.", ctx);
+  }
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`The BambooKit service answered with an error (${res.status}).`);
+  if (!res.ok) {
+    const body: any = await res.json().catch(() => null);
+    throw new ApiError(res.status, body?.error?.code ?? `HTTP_${res.status}`, body?.error?.message ?? `The BambooKit service answered with an error (${res.status}).`, {
+      ...ctx,
+      requestId: body?.requestId ?? res.headers.get("X-Request-Id"),
+      apiVersion: res.headers.get("X-BambooKit-API"),
+      details: body?.error?.details,
+    });
+  }
   const body = await res.json();
   return Array.isArray(body) ? (body as Item[]) : Array.isArray(body?.data) ? (body.data as Item[]) : [];
 }
@@ -132,7 +148,7 @@ export function ShareView() {
         if (cancelled) return;
         setState(items ? { kind: "ok", items } : { kind: "missing" });
       } catch (err) {
-        if (!cancelled && initial) setState({ kind: "error", message: (err as Error)?.message || "Can't reach the BambooKit service." });
+        if (!cancelled && initial) setState({ kind: "error", error: err });
       }
     };
     void run(true);
@@ -158,13 +174,7 @@ export function ShareView() {
           </div>
         )}
         {state.kind === "error" && (
-          <div className="py-10 text-center">
-            <h1 className="text-2xl font-semibold">Couldn&apos;t load this shared session</h1>
-            <p className="mt-2 text-bk-muted">{state.message}</p>
-            <Button className="mt-5" onClick={() => setTick((t) => t + 1)}>
-              Retry
-            </Button>
-          </div>
+          <ErrorState title="Couldn't load this shared session" error={state.error} onRetry={() => setTick((t) => t + 1)} />
         )}
         {state.kind === "ok" && <Transcript items={state.items} />}
       </main>
