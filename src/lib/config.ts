@@ -41,6 +41,7 @@ export const FIREBASE: FirebaseConfig | null =
 export const LINKS = {
   github: "https://github.com/BambooKit/bambookit-application",
   releases: "https://github.com/BambooKit/bambookit-application/releases/latest",
+  androidReleases: "https://github.com/BambooKit/bambookit-android/releases/latest",
   discussions: "https://github.com/BambooKit/bambookit-application/discussions",
   bugReport: "https://github.com/BambooKit/bambookit-application/issues/new?template=bug_report.yml",
   featureRequest: "https://github.com/BambooKit/bambookit-application/issues/new?template=feature_request.yml",

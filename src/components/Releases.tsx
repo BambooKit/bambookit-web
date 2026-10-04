@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Download, ExternalLink, Monitor, RefreshCw, Smartphone } from "lucide-react";
 import { RichText } from "@/components/app/RichText";
 import { InlineError } from "@/components/ErrorInfo";
 import { Button, Card, Pill, Spinner, cx } from "@/components/ui";
-import { ApiError } from "@/lib/api";
+import { ApiError, apiGet } from "@/lib/api";
 import { compareVersions, usePublicResource } from "@/lib/compat";
+import { LINKS } from "@/lib/config";
 import { fullDate } from "@/lib/format";
 import type { Device, Release, ReleasePlatform } from "@/lib/types";
 
@@ -144,5 +146,46 @@ export function LatestReleases({ desktops, className }: { desktops?: Device[]; c
       <ReleaseCard platform="windows" desktops={desktops} />
       <ReleaseCard platform="android" />
     </div>
+  );
+}
+
+/** One request per platform per page load, shared by every DownloadButton. */
+const latestCache: Partial<Record<ReleasePlatform, Promise<Release | null>>> = {};
+
+function latest(platform: ReleasePlatform): Promise<Release | null> {
+  if (!latestCache[platform]) latestCache[platform] = apiGet<Release>(`/v1/releases/latest?platform=${platform}`, null).catch(() => null);
+  return latestCache[platform]!;
+}
+
+/**
+ * A direct download link for the newest installer (Windows .exe) or APK (Android). It points at the
+ * GitHub release page until the API names the file, and stays there if the API can't be reached.
+ */
+export function DownloadButton({ platform, label, primary = true, className }: { platform: ReleasePlatform; label?: string; primary?: boolean; className?: string }) {
+  const [release, setRelease] = useState<Release | null>(null);
+  useEffect(() => {
+    let alive = true;
+    latest(platform).then((r) => alive && setRelease(r));
+    return () => {
+      alive = false;
+    };
+  }, [platform]);
+  const fallback = platform === "android" ? LINKS.androidReleases : LINKS.releases;
+  const href = release?.download?.url ?? release?.url ?? fallback;
+  const Icon = platform === "android" ? Smartphone : Monitor;
+  return (
+    <a
+      href={href}
+      rel="noopener noreferrer"
+      className={cx(
+        "inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium",
+        primary ? "bg-bk-accent text-bk-bg hover:opacity-90" : "border border-bk-line bg-bk-panel text-bk-fg hover:bg-bk-raised",
+        className,
+      )}
+    >
+      <Icon className="size-4" />
+      {label ?? (platform === "android" ? "Download APK" : "Download for Windows")}
+      {release && <span className="font-mono text-xs opacity-75">v{release.version}</span>}
+    </a>
   );
 }

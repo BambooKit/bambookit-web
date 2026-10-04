@@ -23,8 +23,8 @@ export const DOCS: DocPage[] = [
 BambooKit has three parts that share one account:
 
 - **BambooKit Desktop** runs on your Windows PC. You work with the coding agent there: chat, files, diffs, terminal, Git, MCP servers and models. Your sessions and project files stay on the PC.
-- **BambooKit for Android** is the remote. Follow sessions live, read their history (prompts, timeline, changes with before and after, tests), browse the project, see its diagram, stop a run and answer the agent's permission requests.
-- **This website** shows your PCs, sessions with their history, and approvals when you sign in, and has your account page. It is view only.
+- **BambooKit for Android** is the remote. Follow sessions live (todos, timeline, the live diagram, full diffs), answer the agent's approvals and questions, chat in a session after **Continue on PC**, rename and like sessions, add provider API keys to your PC, and see your profile statistics and achievements.
+- **This website** shows your PCs, sessions with their history, approvals and questions when you sign in, and has your account page. It can answer approvals and questions, rename and like sessions and ask your PC to continue a session; chatting happens on the PC or the phone.
 
 A small cloud service, **BambooKit Cloud** (the BambooKit API), signs you in, pairs your devices, keeps a short index of your sessions and relays live data between your PC and your other devices. It never connects to your PC; your PC connects out to it.
 
@@ -39,25 +39,25 @@ A small cloud service, **BambooKit Cloud** (the BambooKit API), signs you in, pa
 
 | Action | Desktop | Phone | Web |
 |---|---|---|---|
-| Start a new session | Yes | No | No |
+| Start a new session | Yes | Yes (in a project) | No |
 | See PCs, projects and sessions | Yes | Yes | Yes |
 | Session history: summary, prompts, timeline, diffs, before/after, tests | Yes | Yes | Yes |
+| Live todos and live diagram | Yes | Yes | No |
 | Read a session while its PC is off (7-day copy) | — | Yes | Yes |
 | Project files and diagram | Yes | Yes | No |
 | Answer approvals and questions | Yes | Yes | Yes |
 | Stop a running agent | Yes | Yes | No |
-| Send messages to the agent | Yes | No | No |
+| Send messages to the agent (choose the model) | Yes | Yes, after **Continue on PC** | No |
+| Rename and like sessions | Yes | Yes | Yes |
+| Add provider API keys | Yes | Yes (end-to-end encrypted to the PC) | No |
 | Edit files | Yes | No | No |
-| Profile photo, delete account | — | Yes | Yes |
+| Profile: photo, nickname, statistics, achievements | — | Yes | Yes |
+| Keep the PC awake while agents run (☕) | Yes | — | — |
 | App lock | — | Yes | — |
 
 ## Versions
 
-| App | Version |
-|---|---|
-| BambooKit Desktop (Windows 10/11, 64-bit) | 1.0.2 |
-| BambooKit for Android (Android 8.0+) | 1.0.3 |
-| BambooKit Cloud (API) | 1.0.1 |
+The newest version of each app, with its release notes, is listed under **Download and install** on the [home page](/#install) and on the **Updates** screen of the Android app. Requirements: Windows 10 or 11 (64-bit) for Desktop, Android 8.0 or newer for the phone app. When a feature needs a newer BambooKit Desktop than the one on your PC, the phone and this site say **Update BambooKit Desktop**; see [Desktop compatibility](/docs/updates#desktop-compatibility).
 
 ## Next steps
 
@@ -84,14 +84,14 @@ BambooKit is created and maintained by Satyam Pote. BambooKit Desktop is built o
 | **BambooKit Desktop** | Your Windows PC | Runs the agent on 127.0.0.1, stores sessions, executes actions you send from the phone |
 | **BambooKit Cloud** | [bambookit-api.onrender.com](https://bambookit-api.onrender.com/health) | Checks sign-ins, registers devices, pairs phones, keeps the session index and approvals, relays live data |
 | **BambooKit for Android** | Your phone | The remote |
-| **BambooKit Web** | [bambookit-web.onrender.com](https://bambookit-web.onrender.com) | Install, docs, view-only window on your sessions, shared session links |
+| **BambooKit Web** | [bambookit-web.onrender.com](https://bambookit-web.onrender.com) | Install, docs, your sessions, approvals and profile, shared session links |
 
 ## Where your data lives
 
 | Data | Where |
 |---|---|
 | Messages, tool steps, reasoning, diffs, project files | Your PC only |
-| Model API keys | Your PC only |
+| Model API keys (including keys added from the phone, end-to-end encrypted on the way) | Your PC only |
 | Session index: title, status, project name and folder, model, change counts, times | BambooKit Cloud |
 | Approvals: what the agent asked (e.g. the command) and your answer | BambooKit Cloud |
 | Devices: name, platform, app version, the PC's public key | BambooKit Cloud |
@@ -119,7 +119,7 @@ A command your PC has not picked up within 5 minutes fails and is never run late
 
 ## Who can do what
 
-New sessions always start on the PC, and you chat with the agent on the PC. The phone and this site are view only; the phone can also **Stop** a running agent and answer approvals.
+The agent always runs on the PC. From the phone you can start a session in a project, chat in a session after **Continue on PC** (choosing the model), **Stop** a run, answer approvals and questions, rename and like sessions and add provider keys. This site can answer approvals and questions, rename and like sessions and ask the PC to continue a session. Each of these is a command your PC carries out, as shown above. Nobody can edit files or open a shell remotely.
 
 ## Where models come from
 
@@ -143,15 +143,19 @@ The hosted API runs on a free plan that sleeps after about 15 minutes without tr
 
 Requirements: Windows 10 or 11, 64-bit.
 
-Open PowerShell and run:
+1. Download **BambooKit-Setup .exe** with the **Download for Windows** button on the [home page](/#install), or from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest), and run it.
+2. If Windows SmartScreen says **Windows protected your PC**, choose **More info → Run anyway**. The installer is not code-signed yet.
+3. Open **BambooKit** from the Start menu and sign in (or create an account).
+4. Choose **Add project** (\`Ctrl+O\`), pick a project folder and start a session.
+5. Optional: click the **☕ keep-awake** button next to the update button so the PC doesn't go to sleep while agents run. It stays on until you click it again or close the window.
+
+Or open PowerShell and run:
 
 \`\`\`powershell
 irm https://bambookit-web.onrender.com/install.ps1 | iex
 \`\`\`
 
 The script looks up the latest **BambooKit Desktop** release on GitHub, downloads \`BambooKit-Setup-<version>-x64.exe\`, checks its signature and starts it. The installer is not code-signed yet, so the script prints a warning and Windows SmartScreen may ask you to confirm (**More info → Run anyway**).
-
-You can also download the installer yourself from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest).
 
 | What | Where |
 |---|---|
@@ -165,12 +169,13 @@ Updates install automatically; see [Updates](/docs/updates).
 
 Requirements: Android 8.0 or newer.
 
-1. On your phone, open the [BambooKit for Android releases](https://github.com/BambooKit/bambookit-android/releases/latest) and download **BambooKit-<version>.apk**.
-2. Open the file. Allow installing from your browser when Android asks.
-3. Sign in with the same account you use on the PC (email and password).
-4. Allow notifications when asked, then [pair your phone](/docs/pairing).
+1. On your phone, tap **Download for Android** on the [home page](/#install), or open the [BambooKit for Android releases](https://github.com/BambooKit/bambookit-android/releases/latest) and download **BambooKit-<version>.apk**.
+2. Open the file. When Android asks, allow **Install unknown apps** for your browser, then go back.
+3. Tap **Install** and open BambooKit.
+4. Sign in with the same account you use on the PC (email and password).
+5. Allow notifications when asked, then on the PC choose **BambooKit → Add mobile device** and scan the QR code ([Pairing your phone](/docs/pairing)).
 
-New versions are offered inside the app (**Devices → Check for updates**).
+New versions are offered inside the app (**Profile → App updates**).
 
 ## From source {#from-source}
 
@@ -237,11 +242,15 @@ On the phone open **Projects → your project → the session**. **Summary** sho
 
 ## 5. Answer an approval
 
-When the agent needs permission (for example to run a command), the phone shows **Approval required**. Open **Approvals** and choose **Allow once**, **Always** or **Deny**.
+When the agent needs permission (for example to run a command or edit a file), the phone plays the BambooKit sound and shows **Approval required**. Open **Approvals** and choose **Allow once**, **Always** or **Deny**. When the agent asks a question, tick an option (or several) or type your own answer and press **Submit**.
 
-## 6. Stop if needed
+## 6. Chat from the phone
 
-If the agent goes the wrong way, press **Stop** on the phone. Continue the conversation in BambooKit Desktop.
+In a session press **Continue on PC** once. The PC opens the session, and from then on you can type messages on the phone and pick the model for each one.
+
+## 7. Stop if needed
+
+If the agent goes the wrong way, press **Stop** on the phone.
 `,
   },
   {
@@ -259,8 +268,8 @@ Use the **same account** on BambooKit Desktop, BambooKit for Android and this we
 | Email and password | Yes | Yes | Yes |
 | Google | Yes | Not yet | Yes |
 | Continue without an account | Yes ("Continue offline") | No | No |
-| Profile photo | — | Devices → Profile | Account |
-| Delete account | — | Devices → Profile | Account |
+| Profile photo | — | Profile | Account |
+| Delete account | — | Profile | Account |
 
 **An email/password account and a Google account are two separate accounts, even with the same email address.** Pick one method and use it everywhere: pairing and session lists only work within one account. If you want to use the phone, use an email account, because the Android app does not offer Google sign-in yet.
 
@@ -289,13 +298,13 @@ BambooKit never sees your password: sign-ins are handled by Supabase (email) and
 ## Sign out
 
 - **Desktop:** BambooKit chip → **Sign out of BambooKit**.
-- **Android:** **Devices → Sign out**.
+- **Android:** **Profile → Sign out**.
 
 Signing out does not remove the device from your account; revoke it for that.
 
 ## Profile photo
 
-On this site open [Account](/account) → **Upload photo**, or on the phone **Devices → Profile → Change photo**. JPEG, PNG or WebP up to 2 MB. **Remove photo** goes back to your Google picture (if any). Photos are stored in private cloud storage and shown through links that expire after an hour.
+On this site open [Account](/account) → **Upload photo**, or on the phone **Profile → Change photo**. JPEG, PNG or WebP up to 2 MB. **Remove photo** goes back to your Google picture (if any). Photos are stored in private cloud storage and shown through links that expire after an hour.
 
 ## Email verification
 
@@ -303,7 +312,7 @@ The [Account](/account) page shows whether your email is verified and can **Send
 
 ## Delete your account
 
-On this site: [Account](/account) → **Delete account**. On the phone: **Devices → Profile → Delete account…**. Type \`DELETE MY ACCOUNT\` to confirm.
+On this site: [Account](/account) → **Delete account**. On the phone: **Profile → Delete account…**. Type \`DELETE MY ACCOUNT\` to confirm.
 
 | Deleted | Not deleted |
 |---|---|
@@ -354,9 +363,17 @@ The chip in the title bar shows your account. Click it for:
 
 Below are **Paired phones** (with **Disconnect**), **Add mobile device** and **Sign out of BambooKit**.
 
+## Keep the PC awake (☕)
+
+The **☕** button next to the update button in the title bar keeps Windows from going to sleep while agents run, so long tasks finish and your phone can still reach the PC. It stays on until you click it again or close the window.
+
+## What your phone can do on this PC
+
+Requests from your phone and this website are carried out by Desktop on your behalf: answering approvals and questions, stopping a run, starting a session in a project, chatting in a session after **Continue on PC**, renaming a session and saving provider API keys. Desktop must be running and signed in for them to arrive.
+
 ## What Desktop shares with BambooKit Cloud
 
-When you are signed in, Desktop sends a small index of your projects and sessions (titles, status, model, change counts) and the agent's permission requests. Chats, diffs and files are sent only when your phone or this site asks for them, and are not stored. After each finished turn, Desktop saves a compressed copy of the session history (prompts, timeline, changed lines, tests) to private cloud storage for 7 days, so you can read it while the PC is off. Desktop also pings the hosted service every 10 minutes so it does not fall asleep.
+When you are signed in, Desktop sends a small index of your projects and sessions (titles, status, model, change counts), the agent's permission requests and questions, and per-session totals for your profile statistics (coding time, files and lines changed, tests). Chats, diffs and files are sent only when your phone or this site asks for them, and are not stored. After each finished turn, Desktop saves a compressed copy of the session history (prompts, timeline, changed lines, tests) to private cloud storage for 7 days, so you can read it while the PC is off. Desktop also pings the hosted service every 10 minutes so it does not fall asleep.
 
 ## Help menu
 
@@ -369,47 +386,88 @@ When you are signed in, Desktop sends a small index of your projects and session
     section: "Apps",
     summary: "The remote for the agent on your PC.",
     body: `
-This page describes **BambooKit for Android 1.0.3**.
-
 ## Tabs
 
 | Tab | What it shows |
 |---|---|
-| **Home** | Your PCs and whether they are online, sessions that are working, approvals waiting, recent notifications |
-| **Projects** | Every project on your PCs and its sessions |
-| **Approvals** | Permission requests from the agent, with a badge |
-| **Devices** | Paired PCs (rename, disconnect, revoke), **Scan QR code**, **App lock**, **Check for updates**, **Profile**, **Sign out** |
+| **Home** | Your PCs and whether they are online, sessions that are working, approvals waiting, and **Recent activity** with a **Clear** button |
+| **Projects** | Every project on your PCs and its sessions; **New session** starts one on the project's PC |
+| **Approvals** | Permission requests and questions from the agent, with a badge |
+| **Devices** | Paired PCs (rename, disconnect, revoke), **Scan QR code**, this phone and **Profile and settings** |
 
 ## Inside a session
-
-Sessions are **view only**. The tabs:
 
 | Tab | What it shows |
 |---|---|
 | **Summary** | Status and current action, project, branch and base commit, agent, model, duration, prompts, files changed, lines, tests passed/failed, approvals |
+| **Todos** | The agent's todo list, live from the PC: pending, in progress and done |
 | **Prompts** | Every prompt you gave, with time |
 | **Timeline** | Prompts, replies, file reads and edits, commands, test runs, searches, approvals and errors in time order |
-| **Changes** | Changed files; open one for **Diff** (each recorded edit), **Before** and **After** |
+| **Changes** | Every changed file with its full diff; open one for **Diff** (each recorded edit), **Before** and **After** |
 | **Files** | The file map: every file the session created, edited, deleted or read |
 | **Project** | A folder browser of the project; files open in the code viewer (search, copy) |
-| **Diagram** | The project drawn as components with their real references; **Rescan** |
-| **Chat** | The live conversation |
+| **Diagram** | **Live**, **History** and **Project map**; see [Live diagram](/docs/diagram) |
+| **Chat** | The live conversation, and a message box once the session is continued on the PC |
 
-A badge says where the history comes from: **Live from** your PC, or **Saved copy** when the PC is offline (kept 7 days). Before, After, Project, Diagram and Chat need the PC online. Before is labelled with its source: the session's own record, or the last Git commit.
+A badge says where the history comes from: **Live from** your PC, or **Saved copy** when the PC is offline (kept 7 days). Before, After, Todos, Project, Diagram and Chat need the PC online. Before is labelled with its source: the session's own record, or the last Git commit.
 
 ## Actions
 
 | Action | When |
 |---|---|
 | **Stop** (asks to confirm) | While the agent is working |
-| **Allow once / Always / Deny** | For pending approvals |
+| **Allow once / Always / Deny** | For pending approvals (commands, file edits and other tools that ask) |
+| **Submit** / **Dismiss** | For the agent's questions: tick one or several options or type your own answer |
+| **Continue on PC** | Opens the session in BambooKit on the PC; after that you can chat in it from the phone |
+| Send a message, choose the model | After **Continue on PC** |
+| **Rename** and **like** (★) | Any time; liked sessions are marked ★ everywhere and listed under **Liked** on this website. Renaming changes the title on the PC |
 | **Reload** | Any time |
 
-That is all: the phone does not send messages, start sessions, edit files or share. If the PC is offline, Stop waits up to 5 minutes (**PC offline, queued**).
+The phone does not edit files. If the PC is offline, actions wait up to 5 minutes (**PC offline, queued**) and are then dropped.
 
-## Profile and App lock
+## Chat from the phone
 
-**Devices → Profile** shows your name, email, sign-in method and verification, lets you change or remove your photo, sign out, or delete the account. **Devices → App lock** asks for your fingerprint, face or screen lock when the app opens; see [App lock](/docs/app-lock).
+1. Open the session and press **Continue on PC** (confirm). The PC opens the session in BambooKit.
+2. The **Chat** tab now has a message box. Pick a model with the model picker (it lists the providers and models configured on that PC; the session's default is preselected) and send.
+3. Replies stream in live, with the agent's tool steps, approvals and questions.
+
+Sessions you start from **Projects → New session** are continued on the PC automatically, so you can keep chatting in them straight away.
+
+## AI providers and API keys
+
+**Profile → AI providers** lists, per PC, the providers configured in BambooKit Desktop and their models. To add a key, choose a provider, paste the key and press **Add key**:
+
+- The key is **encrypted end-to-end to your PC** before it leaves the phone: an AES-256-GCM key encrypts it, and that key is wrapped with the PC's own RSA key (RSA-OAEP with SHA-256). Only that PC can decrypt it.
+- BambooKit Cloud only passes the ciphertext along and deletes it as soon as the PC answers. The key is **never stored in the cloud** and never written to the event log.
+- The field is cleared once sent, and the key is **never shown again**, on the phone or anywhere else. **Remove** deletes a key from the PC.
+
+## Profile
+
+Open **Profile** from the top bar or **Devices → Profile and settings**:
+
+| Part | What it has |
+|---|---|
+| Header | Your photo (**Change photo**, **Remove**), name and member-since date |
+| Nickname | The name shown on your devices and this website |
+| Statistics | Projects, sessions, **Coding time** (this week, this month, total), code stats (files created and modified, lines added and removed, tests) and tasks completed |
+| Achievements | Unlocked and in-progress achievements, such as First Project, 1,000 Lines, Night Coder or Marathon |
+| Notifications, App lock, App updates, AI providers | Settings for this phone |
+| Account, Danger zone | Sign-in method and verification, **Sign out**, **Delete account…** |
+| Projects managed | At the bottom: every project with its PC, branch and coding time; mark it **Active**, **Completed** or **Archived** |
+
+Coding time counts only while the agent is actually working on a task, not while the app is open. See [Profile and achievements](/docs/profile).
+
+## Updates screen
+
+**Profile → App updates** shows the installed version, the newest real release from the BambooKit for Android releases and its release notes (**What's new**), with **Update**, **Install** or **Skip this version**. See [Updates](/docs/updates).
+
+## Recent activity
+
+**Home → Recent activity** lists pairings, approvals, notifications and other account events. **Clear** (asks to confirm) removes recent activity and notifications for your account on **all your devices**; sessions and approvals are not affected.
+
+## App lock
+
+**Profile → App lock** asks for your fingerprint, face or screen lock when the app opens; see [App lock](/docs/app-lock).
 
 ## Sign-in
 
@@ -417,39 +475,41 @@ Email and password (sign in, create account, forgot password). Google sign-in is
 
 ## Notifications and storage
 
-Notifications (Approval required, Agent finished, Agent failed) arrive while the app is running; see [Notifications](/docs/notifications). Your sign-in is stored encrypted with the Android Keystore and app data is excluded from backups.
+Notifications for questions, approvals, finished sessions and errors play the **BambooKit sound**; see [Notifications](/docs/notifications). Your sign-in is stored encrypted with the Android Keystore and app data is excluded from backups.
 
 ## Permissions the app asks for
 
 Internet, notifications (Android 13+), camera (QR scan), biometrics (App lock) and "install unknown apps" (only when you install an update; Android always asks you to confirm).
 
-## Earlier version (1.0.2)
+## When the PC app is too old
 
-Android 1.0.2 had a Chat view with a message box, Continue, Retry, Rewind and Share for sessions continued on the PC, and no history tabs, profile or app lock. Update from **Devices → Check for updates**.
+Some features need a recent BambooKit Desktop on the PC (for example todos, AI providers and the full approval details). If yours is older, the phone says **Update BambooKit Desktop** instead of failing; tap **ⓘ** for the details. See [Desktop compatibility](/docs/updates#desktop-compatibility).
 `,
   },
   {
     slug: "web",
     title: "Website",
     section: "Apps",
-    summary: "A view-only window on your PCs, sessions and approvals.",
+    summary: "Your PCs, sessions, approvals and profile in the browser.",
     body: `
 Sign in at [bambookit-web.onrender.com](https://bambookit-web.onrender.com/signin) with your BambooKit account (email and password, or Google).
 
 | Page | What it shows |
 |---|---|
-| [Sessions](/sessions) | Your PCs with online status and every session: status, project, model, changes, pending approvals. Search and filter by PC or status |
-| Session | Tabs **Summary**, **Prompts**, **Timeline**, **Changes** (Diff, Before, After), **Files** and **Chat**; updated live while the agent works |
+| [Sessions](/sessions) | Your PCs with online status and every session: status, project, model, changes, pending approvals. Search, filter by PC or status, and show only **Liked** sessions |
+| Session | Tabs **Summary**, **Prompts**, **Timeline**, **Changes** (Diff, Before, After), **Files** and **Chat**; updated live while the agent works. **Like** (★), **Rename** and **Continue on PC** |
 | [Devices](/devices) | Your PCs and phones, online state and last seen |
 | [Approvals](/approvals) | Permission requests and questions from the agent, pending and answered. Answer them here |
-| [Account](/account) | Your profile, nickname, sign-in method, email verification, profile photo, browser notifications and **Delete account** |
+| [Account](/account) | Your profile, nickname, statistics, projects and achievements, sign-in method, email verification, profile photo, browser notifications, the latest releases and **Delete account** |
 | [Setup](/welcome) | The steps to connect your first PC and phone |
 
-## View only
+## What you can do here
 
-The website does not send messages, stop runs, browse the project tree or manage devices. Chat in BambooKit on your PC or in the Android app. The website can answer approvals and questions, and a session's **Continue on PC** button asks your PC (when it is online) to open that session in BambooKit. Your own account (nickname, photo, deletion) is managed on the [Account](/account) page.
+The website can answer approvals and questions, like and rename sessions, and a session's **Continue on PC** button asks your PC (when it is online) to open that session in BambooKit. It does not send chat messages, stop runs, browse the project tree or manage devices: chat in BambooKit on your PC or in the Android app. Your own account (nickname, photo, deletion) is managed on the [Account](/account) page.
 
 While the website is open, notifications (questions, approvals, finished or failed sessions) appear in the corner of the page. Turn on browser notifications on the [Account](/account) page to also get them from your browser.
+
+If a feature needs a newer BambooKit Desktop than the one on your PC, the page says **Update BambooKit Desktop** and lists what needs the newer version, which version is needed and how to update. See [Desktop compatibility](/docs/updates#desktop-compatibility).
 
 ## Session history
 
@@ -543,7 +603,11 @@ For Git repositories the current branch is shown and updates when it changes. Wh
 
 ## Starting work
 
-New sessions start only on the PC. Open the project in Desktop and send the first prompt there.
+Open the project in Desktop and send the first prompt there, or on the phone choose **Projects → the project → New session**, type the first prompt and pick a model. The PC that owns the project creates the session in the project's folder, so that PC must be online.
+
+## Managing projects
+
+At the bottom of your **Profile** (phone) and on the [Account](/account) page, **Projects managed** lists every project with its PC, branch and coding time. Mark a project **Active**, **Completed** or **Archived** to keep the list tidy; this is stored by BambooKit only and does not touch the folder on your PC.
 `,
   },
   {
@@ -596,9 +660,25 @@ When the agent's own change tracking (snapshots) is off, BambooKit builds the ch
 
 In Desktop, **Undo** and **Redo** in the command palette rewind or restore the last message. Rewinding returns the conversation (and, where the agent keeps snapshots, the files) to before that message.
 
-## From the phone
+## Todos
 
-The phone and this site are view only. The phone can **Stop** a running agent and answer approvals; you chat with the agent on the PC.
+When the agent plans its work it keeps a todo list. The session's **Todos** tab on the phone shows it live from the PC: each item as pending, in progress or done, updating as the agent works.
+
+## Full file changes
+
+The **Changes** tab lists every changed file (added, modified, deleted, renamed) with lines added and removed. Open a file for its full **Diff** (each recorded edit, in order), and its whole **Before** and **After**.
+
+## From the phone and the web
+
+| Action | Phone | Web |
+|---|---|---|
+| **Stop** a running agent | Yes | No |
+| Answer approvals and questions | Yes | Yes |
+| **Continue on PC**, then chat and choose the model | Yes | Continue on PC only |
+| **Rename** a session | Yes | Yes |
+| **Like** (★) a session | Yes | Yes, with a **Liked** filter |
+
+Messages need the session to be continued on the PC first: press **Continue on PC** once and the PC opens the session in BambooKit. Each message uses the model you pick in the model picker (the PC's configured providers and models). A rename is carried out by the PC, which owns the title; likes are kept by BambooKit only and never sent to the PC.
 
 ## Deleting
 
@@ -635,18 +715,30 @@ For files a session changed, the session's **Changes** tab on the phone and on t
 
 ## No remote editing
 
-The phone and this site cannot change files. Edit in Desktop.
+The phone and this site cannot change files directly. Edit in Desktop, or ask the agent from the phone after **Continue on PC**; its edits follow your permission rules.
 `,
   },
   {
     slug: "diagram",
-    title: "Project diagram",
+    title: "Live diagram and project diagram",
     section: "Features",
-    summary: "Your project drawn as components and the references between them.",
+    summary: "Watch a session work as a live diagram, replay it, or see your project's structure.",
     body: `
+On the phone a session's **Diagram** tab has three modes:
+
+| Mode | Shows |
+|---|---|
+| **Live** | What the session is doing right now, as a diagram: account → PC → project → session → agent → model → tools used → files changed → Git → tests → todos → approvals. It is rebuilt from real state as events arrive (at most once a second) |
+| **History** | The same diagram at a chosen point of the session's timeline, so you can step back through what happened |
+| **Project map** | The project diagram described below |
+
+Filter the Live and History diagrams by **All**, **Agents**, **Files**, **Tools**, **Git**, **Tests** or **Connections**. Tap a changed file to open its diff.
+
+## Project map
+
 The project diagram shows the project's folders or files as boxes and draws an arrow wherever code really references other code. It is computed on your PC each time you open it or press **Rescan**.
 
-Where: Desktop review panel → **File map** → **Project diagram**; phone session → **Diagram**.
+Where: Desktop review panel → **File map** → **Project diagram**; phone session → **Diagram → Project map**.
 
 \`\`\`Diagram
    index.html            entry points (nothing points at them) on top
@@ -671,11 +763,13 @@ References are found by pattern matching, not a compiler: path aliases (like @/l
   },
   {
     slug: "approvals",
-    title: "Approvals and permissions",
+    title: "Approvals and questions",
     section: "Features",
-    summary: "Answer the agent's permission requests from your phone.",
+    summary: "Answer the agent's permission requests and questions from your phone or this website.",
     body: `
-The agent's permission rules decide what it may do on its own. When a rule says **ask**, the agent pauses and the request appears in Desktop and on your phone as an **approval**. The phone can only answer requests the agent made; it cannot grant anything by itself.
+The agent's permission rules decide what it may do on its own. When a rule says **ask**, for example before it runs a command or edits a file, the agent pauses and the request appears in Desktop, on your phone and on this website as an **approval**. The phone and the website can only answer requests the agent made; they cannot grant anything by themselves.
+
+Each approval shows what the agent wants to do: the command it will run, or the file it will change with the proposed diff (the full details need a recent BambooKit Desktop).
 
 ## Set the rules
 
@@ -693,7 +787,15 @@ Answer on the phone in the **Approvals** tab or from the notification, or on thi
 
 ## Questions
 
-Sometimes the agent asks a question instead, for example which option to use. A question shows one or more prompts with options (choose one, or several when allowed) and, when allowed, a box to type your own answer. **Submit** sends the answers once every question is answered; **Dismiss** tells the agent you won't answer.
+Sometimes the agent asks a question instead, for example which option to use. You get a **BambooKit has a question** notification, and the question appears under **Approvals** on the phone and the website.
+
+| Question type | How to answer |
+|---|---|
+| Single choice | Tick one option |
+| Multiple choice | Tick every option that applies |
+| Free text | Type your own answer in the box (offered alongside the options when the agent allows it) |
+
+A request can hold several questions. **Submit** sends the answers once every question is answered; **Dismiss** tells the agent you won't answer. The agent continues on the PC with your answers.
 
 \`\`\`Diagram
 Agent asks ──► PC ──► Cloud: "Approval required" ──► phone notification
@@ -720,22 +822,86 @@ If you answer while the PC is offline, the answer waits up to 5 minutes. If the 
     body: `
 | Notification | When |
 |---|---|
-| **Approval required** | The agent asks for permission |
+| **Approval required** | The agent asks for permission (a command, a file edit, another tool set to Ask) |
 | **BambooKit has a question** | The agent asks you a question |
 | **Agent finished** | A session goes from working to idle |
 | **Agent failed** | A session ends with an error |
+| **Achievement unlocked** | You reach a new [achievement](/docs/profile) |
 
 Notifications carry only ids and a short text, never code or secrets.
 
 ## On the phone
 
-The app shows them as Android notifications in the **Agent activity** channel; tap one to open the session. They are also listed on **Home**. Allow notifications when the app asks (Android 13+), or later in Android Settings → Apps → BambooKit.
+The app shows them as Android notifications and plays the **BambooKit sound** for questions, approvals, completions and errors. There are two channels: **Requests** (approvals and questions, high priority) and **Session updates** (finished or failed). Change the sound or turn a channel off in **Profile → Notifications → Sound and notification settings**. Tap a notification to open the session or the approval. They are also listed on **Home → Recent activity**. Allow notifications when the app asks (Android 13+), or later in Android Settings → Apps → BambooKit.
 
-Notifications arrive over the app's live connection, so the app must be running. There is no push service yet: if Android stopped the app in the background, you see the notifications the next time you open it. Disabling battery optimisation for BambooKit helps.
+**Clear** on **Home → Recent activity** removes recent activity and notifications for your account on all your devices (phone and website). Sessions and approvals are not affected.
+
+Notifications arrive over the app's live connection. Turn on **Profile → Notifications → Notify me in the background** to keep that connection open while the app is closed; Android then shows a quiet **Background connection** notification. There is no push service yet: if Android stops the app anyway, you see the notifications the next time you open it. Allowing BambooKit to run without battery restrictions (**Open battery settings**) helps.
+
+## On the website
+
+While the website is open, notifications appear in the corner of the page. Turn on browser notifications on the [Account](/account) page to also get them from your browser.
 
 ## On the PC
 
 Desktop has its own notifications and sounds in **Settings → General** (Agent, Permissions, Errors), and tells you when a phone finishes pairing.
+`,
+  },
+  {
+    slug: "profile",
+    title: "Profile and achievements",
+    section: "Features",
+    summary: "Your photo, nickname, statistics, achievements and projects.",
+    body: `
+Your profile is on the phone (**Profile**, from the top bar or **Devices → Profile and settings**) and on this website's [Account](/account) page.
+
+## Photo and nickname
+
+**Change photo** uploads a JPEG, PNG or WebP up to 2 MB; **Remove** goes back to your Google picture (if any). The **nickname** is the name shown on your devices and here. See [Accounts and sign-in](/docs/sign-in#profile-photo).
+
+## Statistics
+
+Everything is computed from real BambooKit records; nothing is estimated.
+
+| Statistic | What counts |
+|---|---|
+| Projects | Projects you opened in BambooKit Desktop, by status (active, completed, archived) |
+| Sessions | Sessions, and those where the agent completed work |
+| Coding time | This week, this month and total. Only the time the agent is actually working on a task counts (from busy to idle or error), not the time an app is open. One task counts at most 6 hours |
+| Code | Files created, modified, deleted and renamed, lines added and deleted, edits, tests run, passed and failed, commits and deployments |
+| Tasks | Agent tasks completed and failed |
+
+Your PC reports per-session totals computed from its own edit history, and each new report replaces the previous one for that session, so nothing is counted twice. A file edited several times in one session counts once as a file, and every edit counts in the line totals. Times are counted in your time zone.
+
+## Achievements
+
+Achievements unlock once and stay unlocked; you get an **Achievement unlocked** notification. Locked ones show your progress.
+
+| Achievement | Goal |
+|---|---|
+| First Project | Open your first project in BambooKit |
+| First Session | Complete your first AI coding session |
+| First Change | Make your first code change through BambooKit |
+| 100 Files | Create or modify 100 files |
+| 1,000 Lines | Add 1,000 lines of code |
+| Code Builder | Complete 10 agent tasks |
+| Project Manager | Manage 5 projects |
+| Night Coder | Code for 2 hours between 22:00 and 05:00 |
+| Debugger | Complete 3 debugging sessions |
+| Tester | Run 10 passing test commands |
+| Ship It | Complete a deployment |
+| Agent Commander | Run 10 agent sessions |
+| Long Session | Keep the agent working on one task for an hour |
+| Cleanup Crew | Remove 500 lines of obsolete code |
+| Marathon | Reach 24 hours of total coding time |
+
+## Projects managed
+
+At the bottom of the profile, **Projects managed** lists every project with its PC, branch and coding time. Set each one to **Active**, **Completed** or **Archived**; BambooKit never changes the status by itself. See [Projects](/docs/projects#managing-projects).
+
+## Updates
+
+**Profile → App updates** on the phone shows your version, the newest release and its release notes. See [Updates](/docs/updates).
 `,
   },
   {
@@ -750,13 +916,24 @@ BambooKit Desktop checks GitHub Releases when it starts, downloads a newer versi
 
 ## Android
 
-The app checks the BambooKit for Android releases at most every 6 hours and when you press **Devices → Check for updates**. When a new version exists, a banner offers **Update** or **Skip this version**. The app downloads the APK (with progress) and opens Android's installer; you always confirm the install. The first time, Android asks you to allow BambooKit to install apps.
+The app checks the BambooKit for Android releases at most every 6 hours and when you press **Check for updates** in **Profile → App updates**. The updates screen shows the version you have, the newest real release and its release notes (**What's new**). When a new version exists, a banner offers **Update** or **Skip this version**. The app downloads the APK (with progress) and opens Android's installer; you always confirm the install. The first time, Android asks you to allow BambooKit to install apps.
 
 Every release is signed with the same BambooKit key, so updates install over the existing app and keep your sign-in.
 
 ## Website and cloud
 
-This website and BambooKit Cloud are updated on the server; there is nothing to install.
+This website and BambooKit Cloud are updated on the server; there is nothing to install. The [Account](/account) page and the [home page](/#install) list the latest Desktop and Android releases with their release notes and downloads.
+
+## Desktop compatibility
+
+New phone and website features sometimes need a newer BambooKit Desktop on the PC. Each PC reports which features it supports, so when yours is too old the phone and this site show **Update BambooKit Desktop** instead of an error, with details: what needs the update, the version you have and the version needed (on the phone, tap **ⓘ**).
+
+| Feature | Needs BambooKit Desktop |
+|---|---|
+| Browse project files, view a file | 1.0.2 or newer |
+| Session history, Before/After, todos, AI providers and models, full approval details | 1.0.3 or newer |
+
+To update, restart BambooKit Desktop (it updates itself when it starts), choose **Check for Updates...** in the app menu, or install the latest version from the [home page](/#install).
 `,
   },
   {
@@ -771,7 +948,7 @@ In Desktop open the command palette → **Share session** (the link is copied). 
 https://bambookit-web.onrender.com/share/AbC123xy
 \`\`\`
 
-Anyone with the link can read the conversation, tool steps and the list of changed files. The shared copy updates as the session continues on the PC. Choose **Unshare session** in Desktop to delete it. (Android 1.0.2 could also publish and unpublish; Android 1.0.3 is view only.)
+Anyone with the link can read the conversation, tool steps and the list of changed files. The shared copy updates as the session continues on the PC. Choose **Unshare session** in Desktop to delete it. Sharing is done from Desktop only.
 
 Publishing is the one case where a copy of a session is stored by BambooKit Cloud, and only until you unpublish it. Only your PC, which holds the secret for that link, can change or delete it. Deleting your account deletes your shared links.
 `,
@@ -782,11 +959,11 @@ Publishing is the one case where a copy of a session is stored by BambooKit Clou
     section: "Features",
     summary: "Lock the Android app with your fingerprint, face or screen lock.",
     body: `
-**BambooKit for Android 1.0.3** can lock the app with your fingerprint, face or the phone's screen lock (PIN, pattern or password). Desktop and this website have no app lock of their own; they rely on your Windows sign-in and browser.
+**BambooKit for Android** can lock the app with your fingerprint, face or the phone's screen lock (PIN, pattern or password). Desktop and this website have no app lock of their own; they rely on your Windows sign-in and browser.
 
 ## Turn it on
 
-**Devices → App lock → Turn on App lock**, then confirm it's you. The phone must have a screen lock; if it has none, the app asks you to set one in Android Settings first.
+**Profile → App lock → Turn on App lock**, then confirm it's you. The phone must have a screen lock; if it has none, the app asks you to set one in Android Settings first.
 
 ## How it works
 
@@ -837,11 +1014,15 @@ The **BambooKit** provider includes free models. Select one in the model picker 
 
 Keys are stored on your PC only. Requests go straight from your PC to the provider and never pass through BambooKit Cloud.
 
+## Adding keys from your phone
+
+On the phone open **Profile → AI providers**, choose the PC and the provider, paste the key and press **Add key**. The key is encrypted on the phone for that PC only (RSA-OAEP with SHA-256 wrapping an AES-256-GCM key) and only the PC can decrypt it. BambooKit Cloud sees only ciphertext, never stores it and deletes it as soon as the PC confirms. The key is never shown again; to change it, add a new one or **Remove** it. Listing providers from the phone needs BambooKit Desktop 1.0.3 or newer.
+
 ## Tuning
 
 - \`Ctrl+Shift+D\` cycles the thinking effort of models that support it.
 - \`Ctrl+.\` switches agent (Build, Plan, or your own).
-- Messages sent from the phone use the model and agent of the session's last prompt.
+- Messages sent from the phone use the model you pick in the phone's model picker, which lists the providers and models configured on that PC. The session's last model is preselected.
 `,
   },
   {
@@ -931,7 +1112,8 @@ BambooKit does not commit, push or pull by itself. The agent may run Git command
 | Data | Where | Kept |
 |---|---|---|
 | Chats, tool steps, diffs, project files | Your PC | Until you delete them |
-| Model API keys | Your PC | Until you remove them |
+| Model API keys (also those added from the phone) | Your PC | Until you remove them |
+| Profile statistics: coding-time intervals, per-session totals (files, lines, tests), achievements, project status | BambooKit Cloud | Until account deletion |
 | Sign-in | Each device, encrypted (Windows DPAPI, Android Keystore) | Until sign-out |
 | Session index: titles, project names and folder paths, status, model, change counts | BambooKit Cloud | Until deleted on the PC or account deletion |
 | Approvals: what the agent asked (e.g. the command) and your answer | BambooKit Cloud | Kept as history |
@@ -950,7 +1132,8 @@ Chats, full files and Before/After versions that your phone or this site reads p
 - **Verified sign-ins.** Every request carries a signed token from Supabase or Google (Firebase), checked against their public keys. BambooKit never sees your password.
 - **Device keys.** Each PC signs every request with its own Ed25519 key, stored encrypted by Windows and never sent anywhere.
 - **Pairing.** QR codes work once, for two minutes, and only for the same account. A phone can only act on PCs it is paired with.
-- **Fixed remote actions.** The phone can Stop a run and answer approvals; everything else on the phone and this site is read only. There is no remote shell, no remote file editing and no remote session start.
+- **Fixed remote actions.** The phone can stop a run, answer approvals and questions, start a session in a project, chat in a session after **Continue on PC**, rename sessions and add or remove provider keys. This site can answer approvals and questions, rename sessions and ask the PC to continue one. There is no remote shell and no remote file editing; everything the agent does still follows your permission rules on the PC.
+- **Provider keys from the phone** are encrypted end-to-end to the PC's own RSA key (RSA-OAEP-SHA256 wrapping an AES-256-GCM key). BambooKit Cloud only relays the ciphertext, never writes it to the event log or stores it, and deletes it as soon as the PC answers. The key is never shown again.
 - **Stale actions never run.** An action not delivered within 5 minutes is dropped.
 - **Folder boundary.** Remote file views are limited to the session's project folder, including through links.
 - **Cloud storage.** Only BambooKit Cloud holds the storage credentials; devices get links that expire after 5 minutes (photos: 1 hour), limited to their own account's folder.
@@ -1009,11 +1192,14 @@ Base URL \`https://bambookit-api.onrender.com\`. Send \`Authorization: Bearer <a
 |---|---|
 | Health | \`GET /health\`, \`GET /ready\` |
 | Profile | \`GET /v1/me\`, \`POST /v1/me/avatar-upload\`, \`POST /v1/me/avatar\`, \`DELETE /v1/me/avatar\`, \`DELETE /v1/me\` |
-| Overview | \`GET /v1/overview\`, \`GET /v1/activity\` |
+| Overview | \`GET /v1/overview\`, \`GET /v1/activity\`, \`DELETE /v1/activity\` (clear) |
+| Statistics | \`GET /v1/me/stats\`, \`GET /v1/me/achievements\`, \`PATCH /v1/projects/:id\` (status) |
+| Releases and service info | \`GET /v1/releases/latest?platform=windows\` (or \`android\`), \`GET /v1/meta\` |
 | Devices and pairing | \`GET /v1/devices\`, \`PATCH /v1/devices/:id\`, \`POST /v1/devices/:id/revoke\`, \`POST /v1/devices/:id/unlink\`, \`POST /v1/pairing/claim\` |
-| Projects and sessions | \`GET /v1/projects\`, \`GET /v1/sessions\`, \`GET /v1/sessions/:id\` |
+| Projects and sessions | \`GET /v1/projects\`, \`POST /v1/projects/:id/sessions\`, \`GET /v1/sessions\`, \`GET /v1/sessions/:id\`, \`PATCH /v1/sessions/:id\` (like) |
+| PC providers | \`GET /v1/devices/:id/providers\` (never includes keys) |
 | Session history | \`GET /v1/sessions/:id/history\` (live, or the 7-day copy), \`GET /v1/sessions/:id/file-versions?path=\` (before/after) |
-| Live from the PC | \`GET /v1/sessions/:id/parts\`, \`/changes\`, \`/filemap\`, \`/diagram\`, \`/tree?path=\`, \`/file?path=\` |
+| Live from the PC | \`GET /v1/sessions/:id/parts\`, \`/todos\`, \`/changes\`, \`/filemap\`, \`/diagram\`, \`/tree?path=\`, \`/file?path=\` |
 | Actions | \`POST /v1/sessions/:id/commands\`, \`GET /v1/commands/:id\` |
 | Approvals | \`GET /v1/approvals\`, \`POST /v1/approvals/:id/respond\` |
 | Notifications | \`GET /v1/notifications\`, \`POST /v1/notifications/read-all\` |
@@ -1210,7 +1396,15 @@ The hosted service sleeps when idle; the first request can take up to a minute w
 
 ## I can't type in a session on my phone
 
-The phone and this site are view only: chat with the agent in BambooKit Desktop. From the phone you can Stop a run and answer approvals.
+Press **Continue on PC** in the session first (the PC must be online). After the PC opens the session, the Chat tab has a message box. This website does not send chat messages; use the phone or the PC.
+
+## "Update BambooKit Desktop"
+
+The feature you opened needs a newer BambooKit Desktop than the one on that PC. Tap **ⓘ** (phone) or read the notice (web) for the version needed, then restart Desktop on the PC (it updates itself when it starts) or install the latest version from the [home page](/#install). See [Desktop compatibility](/docs/updates#desktop-compatibility).
+
+## A provider key from the phone didn't arrive
+
+The PC must be online and on BambooKit Desktop 1.0.3 or newer. The encrypted key waits at most 5 minutes for the PC; after that, add it again. The key is never shown again, so keep your own copy with the provider.
 
 ## "Saved copy" instead of "Live from PC"
 
@@ -1218,7 +1412,7 @@ Your PC is offline, so you see the history copy it saved after its last turn (up
 
 ## Profile photo upload fails on this site
 
-The service's cloud storage must allow uploads from this website. Try again later or upload the photo from the phone (**Devices → Profile**).
+The service's cloud storage must allow uploads from this website. Try again later or upload the photo from the phone (**Profile**).
 
 ## An action stays "PC offline, queued"
 
@@ -1271,6 +1465,58 @@ Use Help → **Export logs** in Desktop and attach the file to a [bug report](ht
 `,
   },
   {
+    slug: "install-help",
+    title: "Install and connection help",
+    section: "Help",
+    summary: "Fixes for installing BambooKit and connecting your phone to your PC.",
+    body: `
+## Windows says "Windows protected your PC"
+
+That is SmartScreen. The BambooKit installer is not code-signed yet, so Windows doesn't recognise it. Choose **More info**, check that the file is **BambooKit-Setup-<version>-x64.exe** from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest), then **Run anyway**. The PowerShell installer prints a warning about the missing signature for the same reason.
+
+## Android won't install the APK
+
+Android blocks apps from outside the Play Store until you allow it per app:
+
+1. Open the downloaded **BambooKit-<version>.apk**.
+2. Android says your browser isn't allowed to install apps: tap **Settings** and turn on **Allow from this source** (**Install unknown apps**).
+3. Go back and tap **Install**.
+
+If it says **App not installed**, check that the phone runs Android 8.0 or newer and has free space. If an older BambooKit was installed from a different build (for example a debug build), uninstall it first; releases are all signed with the same key, so normal updates install over each other.
+
+## The phone can't see my PC
+
+Your phone only sees a PC that is **online and signed in to the same account**:
+
+1. On the PC, start BambooKit Desktop and make sure it is signed in. Click the **BambooKit** chip: **BambooKit API**, **Realtime** and **Agent engine** should say connected.
+2. Check that the phone uses the same account. Email/password and Google are separate accounts, even with the same address.
+3. Make sure the PC isn't asleep. Use the **☕** keep-awake button while agents run.
+4. Still missing? Pair again: on the PC choose **BambooKit → Add mobile device** and scan the new code.
+
+## Re-pair a phone
+
+On the PC open the **BambooKit** chip → **Paired phones** → **Disconnect**, or on the phone **Devices** → the PC → **Disconnect**. Then choose **Add mobile device** on the PC and scan the QR code. If the phone or PC was **revoked**, see [Troubleshooting](/docs/troubleshooting) to set it up again.
+
+## The QR code doesn't scan
+
+- Allow the camera when the app asks (Android Settings → Apps → BambooKit → Permissions).
+- Scan from **Devices → Scan QR code** in the BambooKit app, not the phone's camera app.
+- Make the code bigger on the PC screen, reduce glare and hold the phone 20–30 cm away.
+- Codes expire after 2 minutes and work once. If it says **expired** or **already used**, scan the new code or press **New code**.
+- **This desktop is signed in to a different BambooKit account** means the phone and PC use different accounts.
+
+## "Update BambooKit Desktop"
+
+The phone or this site needs a newer BambooKit Desktop on that PC for the feature you opened (for example todos, AI providers or full approval details). Tap **ⓘ** for details. Restart Desktop on the PC (it updates itself when it starts) or install the latest version from the [home page](/#install). See [Desktop compatibility](/docs/updates#desktop-compatibility).
+
+## No notification sound
+
+Notifications for questions, approvals, completions and errors play the BambooKit sound. If you hear nothing, open **Profile → Notifications → Sound and notification settings** and check the **Requests** and **Session updates** channels, and that the phone isn't in Do Not Disturb.
+
+More: [Troubleshooting](/docs/troubleshooting) · [FAQ](/docs/faq)
+`,
+  },
+  {
     slug: "faq",
     title: "FAQ",
     section: "Help",
@@ -1288,9 +1534,21 @@ No. Keys stay on your PC and model requests go directly from your PC to the prov
 
 The apps are free and the BambooKit provider includes free models. Your own provider keys are billed by that provider.
 
-## Can I start a session from my phone?
+## Can I start a session or chat from my phone?
 
-No. Start and chat on the PC; from the phone you can follow a session, stop it and answer approvals.
+Yes. **Projects → the project → New session** starts one on the project's PC. In an existing session press **Continue on PC** once, then type messages and pick the model. The PC must be online in both cases.
+
+## Can I add my OpenAI or Anthropic key from my phone?
+
+Yes, in **Profile → AI providers**. The key is encrypted end-to-end to your PC, never stored in the cloud and never shown again. See [Models and providers](/docs/models#adding-keys-from-your-phone).
+
+## Will my PC go to sleep while the agent works?
+
+Windows may. Click the **☕** keep-awake button next to the update button in BambooKit Desktop; the PC stays awake until you click it again or close the window.
+
+## What does "Clear" in Recent activity do?
+
+It removes recent activity and notifications for your account on all your devices. Sessions, approvals and your statistics are not affected.
 
 ## Can I read sessions while my PC is off?
 
@@ -1310,11 +1568,11 @@ No. Both connect to BambooKit Cloud over the internet; no port forwarding or VPN
 
 ## Is there a PIN or fingerprint lock?
 
-Yes, on Android: **Devices → App lock**. See [App lock](/docs/app-lock).
+Yes, on Android: **Profile → App lock**. See [App lock](/docs/app-lock).
 
 ## How do I delete my account?
 
-On this site under [Account](/account), or on the phone under **Devices → Profile**. Sessions on your PCs are not affected. See [Accounts and sign-in](/docs/sign-in#delete-your-account).
+On this site under [Account](/account), or on the phone under **Profile**. Sessions on your PCs are not affected. See [Accounts and sign-in](/docs/sign-in#delete-your-account).
 
 ## Where can I get help?
 

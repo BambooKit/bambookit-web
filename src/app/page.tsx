@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, Terminal } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { CodeBlock } from "@/components/site/CodeBlock";
-import { LatestReleases } from "@/components/Releases";
+import { DownloadButton, LatestReleases } from "@/components/Releases";
+import { HAS_SCREENSHOTS, Screenshots } from "@/components/site/Screenshots";
 import { INSTALL_COMMAND, LINKS } from "@/lib/config";
 
 const PRODUCTS = [
@@ -17,13 +19,13 @@ const PRODUCTS = [
     icon: Smartphone,
     name: "BambooKit for Android",
     tag: "Remote",
-    body: "Your phone is the remote. See your PCs and every session, follow chats and tool calls live, check changed files and answer the agent's permission requests from anywhere.",
-    points: ["Live sessions, chats and changed files", "Approve, always allow or reject requests", "Chat in a session after you continue it on your PC"],
+    body: "Your phone is the remote. See your PCs and every session, follow chats, todos and tool calls live, check changed files and answer the agent's approvals and questions from anywhere.",
+    points: ["Live sessions, todos, diagram and full diffs", "Approve commands and edits, answer the agent's questions", "Chat and pick the model after you continue a session on your PC"],
   },
 ];
 
 const STEPS = [
-  { icon: Terminal, title: "Install and sign in", body: "Run the one-line installer on Windows and sign in to BambooKit Desktop with your account." },
+  { icon: Terminal, title: "Install and sign in", body: "Download the Windows installer (or run the one-line installer) and sign in to BambooKit Desktop with your account." },
   { icon: Sparkles, title: "Work with the agent", body: "Open a project folder and start a session. The agent edits, runs and tests while you review every change." },
   { icon: QrCode, title: "Pair your phone", body: "In Desktop choose BambooKit → Add mobile device and scan the QR code with the Android app." },
 ];
@@ -34,6 +36,49 @@ const PRIVACY = [
   "When your phone or this site opens a chat, it is read live from your PC. If the PC is offline, there is nothing to show.",
   "Model keys and model traffic never leave your PC.",
 ];
+
+const WINDOWS_STEPS: ReactNode[] = [
+  <>Download and run the installer, or run the PowerShell line above, which downloads and starts it for you.</>,
+  <>
+    Windows SmartScreen may say <span className="text-bk-fg">Windows protected your PC</span> because the installer is not code-signed yet. Choose{" "}
+    <span className="text-bk-fg">More info → Run anyway</span>.
+  </>,
+  <>Open BambooKit from the Start menu and sign in, or create an account.</>,
+  <>
+    Choose <span className="text-bk-fg">Add project</span> (<span className="font-mono">Ctrl+O</span>), pick a project folder and start a session.
+  </>,
+  <>
+    Optional: the <span className="text-bk-fg">☕ keep-awake</span> button next to the update button keeps the PC awake while agents run, until you click it
+    again or close the window.
+  </>,
+];
+
+const ANDROID_STEPS: ReactNode[] = [
+  <>Download the APK on your phone with the button above and open it.</>,
+  <>
+    When Android asks, allow <span className="text-bk-fg">Install unknown apps</span> for your browser, then go back.
+  </>,
+  <>
+    Tap <span className="text-bk-fg">Install</span> and open BambooKit.
+  </>,
+  <>Sign in with the same account you use on your PC.</>,
+  <>
+    On the PC choose <span className="text-bk-fg">BambooKit → Add mobile device</span> and scan the QR code with the app.
+  </>,
+];
+
+function InstallSteps({ steps }: { steps: ReactNode[] }) {
+  return (
+    <ol className="mt-5 space-y-2.5 text-sm text-bk-muted">
+      {steps.map((step, i) => (
+        <li key={i} className="flex gap-3">
+          <span className="font-mono text-bk-faint">{i + 1}</span>
+          <span className="min-w-0">{step}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 function Flow() {
   const box = "rounded-xl border border-bk-line bg-bk-panel/90 p-4";
@@ -99,13 +144,17 @@ export default function Home() {
                 there, and you can check in, review changes and answer its questions from your phone.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a href="#install" className="inline-flex items-center gap-2 rounded-lg bg-bk-accent px-5 py-2.5 text-sm font-medium text-bk-bg hover:opacity-90">
-                  Install for Windows <ArrowRight className="size-4" />
+                <DownloadButton platform="windows" />
+                <DownloadButton platform="android" label="Download for Android" primary={false} />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                <a href="#install" className="inline-flex items-center gap-1.5 font-medium text-bk-muted hover:text-bk-fg">
+                  Installation guide <ArrowRight className="size-4" />
                 </a>
-                <Link href="/signin/" className="rounded-lg border border-bk-line bg-bk-panel px-5 py-2.5 text-sm font-medium text-bk-fg hover:bg-bk-raised">
+                <Link href="/signin/" className="font-medium text-bk-muted hover:text-bk-fg">
                   Sign in
                 </Link>
-                <Link href="/docs/" className="rounded-lg px-4 py-2.5 text-sm font-medium text-bk-muted hover:text-bk-fg">
+                <Link href="/docs/" className="font-medium text-bk-muted hover:text-bk-fg">
                   Read the docs
                 </Link>
               </div>
@@ -162,48 +211,65 @@ export default function Home() {
           </ol>
         </section>
 
+        {HAS_SCREENSHOTS && (
+          <section id="screenshots" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">See it in action</h2>
+            <p className="mt-2 max-w-2xl text-bk-muted">BambooKit Desktop on Windows and the Android remote. Click a screenshot to open it full size.</p>
+            <Screenshots />
+          </section>
+        )}
+
         <section id="install" className="scroll-mt-20 border-y border-bk-line bg-bk-panel/40">
-          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2">
-            <div className="min-w-0">
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Install</h2>
-              <p className="mt-2 text-bk-muted">Windows 10 or 11, 64-bit. Open PowerShell and run:</p>
+          <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Download and install</h2>
+            <p className="mt-2 max-w-2xl text-bk-muted">Install BambooKit Desktop on your PC first, then the Android app on your phone. Both are free.</p>
+            <p className="mt-3 text-sm text-bk-faint">
+              System requirements: <span className="text-bk-muted">Windows 10 or 11, 64-bit</span> · <span className="text-bk-muted">Android 8.0 or newer</span> · an
+              internet connection on both.
+            </p>
+          </div>
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-2">
+            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Monitor className="size-5 text-bk-muted" /> Windows
+              </h3>
+              <div className="mt-4">
+                <DownloadButton platform="windows" label="Download BambooKit-Setup .exe" />
+              </div>
+              <p className="mt-4 text-sm text-bk-muted">Or open PowerShell and run:</p>
               <CodeBlock code={INSTALL_COMMAND} />
-              <p className="text-sm text-bk-faint">
-                Downloads the latest BambooKit Desktop installer from the{" "}
+              <InstallSteps steps={WINDOWS_STEPS} />
+              <p className="mt-4 text-xs text-bk-faint">
+                All versions are on the{" "}
                 <a href={LINKS.releases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
                   releases page
-                </a>{" "}
-                and runs it. Prefer to build it yourself? See{" "}
+                </a>
+                . Prefer to build it yourself? See{" "}
                 <Link href="/docs/install/#from-source" className="underline underline-offset-2 hover:text-bk-fg">
                   install from source
                 </Link>
                 .
               </p>
             </div>
-            <div className="min-w-0">
-              <h3 className="text-lg font-medium">Android</h3>
-              <ol className="mt-3 space-y-2.5 text-sm text-bk-muted">
-                <li className="flex gap-3">
-                  <span className="font-mono text-bk-faint">1</span>
-                  <span>
-                    Download <span className="text-bk-fg">BambooKit.apk</span> on your phone from the{" "}
-                    <a href={LINKS.releases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
-                      releases page
-                    </a>{" "}
-                    and open it.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-mono text-bk-faint">2</span>
-                  <span>Sign in with the same account you use on your PC.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-mono text-bk-faint">3</span>
-                  <span>
-                    On the PC choose <span className="text-bk-fg">BambooKit → Add mobile device</span> and scan the QR code with the app.
-                  </span>
-                </li>
-              </ol>
+            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Smartphone className="size-5 text-bk-muted" /> Android
+              </h3>
+              <div className="mt-4">
+                <DownloadButton platform="android" label="Download BambooKit .apk" />
+              </div>
+              <InstallSteps steps={ANDROID_STEPS} />
+              <p className="mt-4 text-xs text-bk-faint">
+                All versions are on the{" "}
+                <a href={LINKS.androidReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                  Android releases page
+                </a>
+                . Stuck? See{" "}
+                <Link href="/docs/install-help/" className="underline underline-offset-2 hover:text-bk-fg">
+                  install and connection help
+                </Link>
+                .
+              </p>
             </div>
           </div>
           <div id="downloads" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6">

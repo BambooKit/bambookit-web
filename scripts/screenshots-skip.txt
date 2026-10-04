@@ -1,0 +1,3 @@
+# Screenshots that must not be published (personal data, keys, status bar clock ...).
+# One "platform/file.png" per line, e.g.:
+# android/profile-tab.png

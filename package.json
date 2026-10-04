@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "screenshots": "node scripts/sync-screenshots.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
