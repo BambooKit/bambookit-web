@@ -142,6 +142,8 @@ export interface Me {
   cloudStorage?: boolean;
   /** Account deletion is available on this server. */
   accountDeletion?: boolean;
+  /** This account may open the admin panel (the admin routes check again). */
+  admin?: boolean;
 }
 
 /** POST /v1/me/avatar-upload */
@@ -351,4 +353,52 @@ export interface Release {
   notes: string;
   url: string;
   download: { name: string; url: string; size: number } | null;
+}
+
+/* ---------------------------------------------------------------- admin */
+
+export interface AdminServerError {
+  at: string;
+  method: string;
+  path: string;
+  status: number;
+  code: string;
+  message: string;
+  requestId: string;
+  client: string | null;
+}
+
+/** GET /v1/admin/overview */
+export interface AdminOverview {
+  service: { version: string; commit: string | null; database: string; storage: boolean; telegram: boolean };
+  health: {
+    startedAt: string;
+    uptimeSeconds: number;
+    requests: number;
+    serverErrors: number;
+    clientErrors: number;
+    memoryMb: number;
+    recentErrors: AdminServerError[];
+  };
+  realtime: { streams: number; devices: number; web: number };
+  users: { total: number; new24h: number; new7d: number; active24h: number; byProvider: Record<string, number> };
+  devices: { desktops: number; desktopsOnline: number; phones: number; revoked: number; desktopVersions: Record<string, number> };
+  projects: { total: number };
+  sessions: { total: number; working: number; updated24h: number };
+  approvals: { pending: number };
+  work: { last7dMs: number; tasks7d: number; failed7d: number };
+}
+
+/** GET /v1/admin/users */
+export interface AdminUser {
+  id: string;
+  email: string | null;
+  name: string | null;
+  provider: string | null;
+  emailVerified: boolean | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  devices: number;
+  projects: number;
+  sessions: number;
 }

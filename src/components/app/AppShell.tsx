@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { BookOpen, ChevronDown, LogOut, UserRound } from "lucide-react";
+import { BookOpen, ChevronDown, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { Wordmark } from "@/components/site/Logo";
 import { ConfigMissing } from "@/components/auth/AuthCard";
 import { LoadingState, cx } from "@/components/ui";
@@ -21,6 +21,9 @@ const TABS = [
   { href: "/welcome/", label: "Setup", match: ["/welcome"] },
   { href: "/account/", label: "Account", match: ["/account"] },
 ];
+
+/** Shown only to accounts whose /v1/me says admin: true. */
+const ADMIN_TAB = { href: "/admin/", label: "Admin", match: ["/admin"] };
 
 /** Where to go after an intentional sign-out (instead of the sign-in page with ?next=). */
 let leaveTarget: string | null = null;
@@ -79,10 +82,9 @@ function LiveIndicator() {
   );
 }
 
-function UserMenu() {
+function UserMenu({ profile }: { profile: ReturnType<typeof useProfile> }) {
   const { user } = useAuth();
   const leave = useLeaveApp();
-  const profile = useProfile();
   const [imgFailed, setImgFailed] = useState(false);
   const avatarUrl = profile.data?.avatarUrl ?? null;
   useEffect(() => setImgFailed(false), [avatarUrl]);
@@ -126,6 +128,11 @@ function UserMenu() {
           <Link href="/account/" onClick={() => setOpen(false)} className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
             <UserRound className="size-4" /> Account
           </Link>
+          {profile.data?.admin === true && (
+            <Link href="/admin/" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
+              <ShieldCheck className="size-4" /> Admin
+            </Link>
+          )}
           <Link href="/docs/" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-bk-muted hover:bg-bk-raised hover:text-bk-fg">
             <BookOpen className="size-4" /> Docs
           </Link>
@@ -173,6 +180,8 @@ function useSendTimeZone() {
 function ShellFrame({ children }: { children: ReactNode }) {
   useSendTimeZone();
   const pathname = usePathname() ?? "";
+  const profile = useProfile();
+  const tabs = profile.data?.admin === true ? [...TABS, ADMIN_TAB] : TABS;
   const approvals = useResource<Approval[]>("/v1/approvals?status=PENDING");
   useRealtime((e) => {
     if (e.type.startsWith("approval.") || (e.type === "ready" && e.payload?.reconnect)) approvals.reload();
@@ -188,7 +197,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
             <Wordmark />
           </Link>
           <nav className="hidden items-center gap-1 text-sm sm:flex">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <Link
                 key={t.href}
                 href={t.href}
@@ -206,11 +215,11 @@ function ShellFrame({ children }: { children: ReactNode }) {
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <LiveIndicator />
-            <UserMenu />
+            <UserMenu profile={profile} />
           </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto border-t border-bk-line px-3 py-1.5 text-sm sm:hidden">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <Link
               key={t.href}
               href={t.href}

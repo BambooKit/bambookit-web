@@ -1116,6 +1116,72 @@ Models, agents, MCP servers and permission rules are configured in **Settings** 
 `,
   },
   {
+    slug: "admin",
+    title: "Admin panel and Telegram bot",
+    section: "Reference",
+    summary: "Watch the health and usage of your BambooKit server from the website or from Telegram.",
+    body: `
+If you run your own BambooKit server, you can see how it is doing in two places: the **Admin** page on this website and a private **Telegram bot**. Both show figures and account metadata only (counts, versions, sign-up dates, server errors), never session content, files, sign-in tokens or keys.
+
+## Set up on Render
+
+Open the API service on Render, go to **Environment** and add:
+
+| Variable | Secret | Purpose |
+|---|---|---|
+| \`ADMIN_EMAILS\` | No | Comma-separated emails of administrator accounts, e.g. \`you@example.com\` |
+| \`TELEGRAM_BOT_TOKEN\` | **Yes** | The token BotFather gives you when you create the bot |
+| \`TELEGRAM_ADMIN_CHAT_IDS\` | No | Comma-separated Telegram chat ids allowed to use the bot |
+
+\`\`\`text
+ADMIN_EMAILS=you@example.com
+TELEGRAM_BOT_TOKEN=<bot-token-from-botfather>
+TELEGRAM_ADMIN_CHAT_IDS=<your-chat-id>
+\`\`\`
+
+Save; Render restarts the API. An admin email must be verified with its sign-in method.
+
+## The Admin page
+
+Sign in with an administrator account and **Admin** appears in the navigation and in your account menu. Other accounts don't see it, and opening \`/admin/\` shows **Administrators only**.
+
+The page shows:
+
+- **Service**: API version, commit, database, cloud storage and Telegram on or off, uptime and memory.
+- **Traffic** since the API started: requests, client errors (4xx) and server errors (5xx).
+- **Live streams**: open realtime connections from devices and the website.
+- **Users**: total, new today and this week, active in the last 24 hours, and by sign-in method.
+- **Devices**: PCs (and how many are online), phones, and which BambooKit Desktop versions are in use.
+- **Activity**: sessions and how many are working now, projects, pending approvals and work in the last 7 days.
+- **Recent server errors**: time, route, status, code, request ID and client. Match the request ID with the API logs.
+- **Users**, newest first, page by page.
+
+It refreshes every 30 seconds while the tab is visible; use **Refresh** to update it now.
+
+## The Telegram bot
+
+1. Create a bot with **@BotFather** and put its token in \`TELEGRAM_BOT_TOKEN\`.
+2. Send **/start** to your bot. Because your chat isn't allowed yet, it replies with your **chat id**.
+3. Add that id to \`TELEGRAM_ADMIN_CHAT_IDS\` and save. After the restart, send **/start** again.
+
+The bot answers with a button menu, so there is nothing to type:
+
+| Button | Shows |
+|---|---|
+| **Status** | Version, commit, uptime, memory, database, storage, traffic and live streams |
+| **Users** | Total, new today and this week, active in 24 hours, by sign-in method |
+| **Devices** | PCs (online), phones and desktop versions |
+| **Sessions** | Sessions, working now, projects, pending approvals and coding time in 7 days |
+| **Errors** | The most recent server errors with their request IDs |
+| **New sign-ups** | The newest accounts with sign-up time and method |
+| **Alerts on/off** | Pause or resume alerts |
+
+**Alerts** arrive on their own when the API starts, when someone signs up and when the server answers with an error (at most one error alert every 5 minutes). Turning alerts off lasts until you turn them on again or the API restarts.
+
+Anyone else who messages the bot only learns their own chat id; it tells them nothing about your server.
+`,
+  },
+  {
     slug: "troubleshooting",
     title: "Troubleshooting",
     section: "Help",
