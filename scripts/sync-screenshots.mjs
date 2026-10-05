@@ -36,6 +36,7 @@ export function altFromFile(file) {
     .replace(/\.png$/i, "")
     .replace(/^\d+[-_ .]+/, "")
     .replace(/[-_]+/g, " ")
+    .replace(/\bbambookit\b/gi, "BambooKit")
     .trim();
   return words ? words[0].toUpperCase() + words.slice(1) : "Screenshot";
 }

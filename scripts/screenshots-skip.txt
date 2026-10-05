@@ -1,3 +1,13 @@
 # Screenshots that must not be published (personal data, keys, status bar clock ...).
 # One "platform/file.png" per line, e.g.:
 # android/profile-tab.png
+desktop/bambookit-desktop-this-pc.png
+desktop/bambookit-desktop-profile.png
+desktop/bambookit-desktop-updates.png
+android/home.png
+android/home-recent-activity.png
+android/home-clear-activity-dialog.png
+android/projects.png
+android/approvals-empty.png
+android/app-updates.png
+android/profile-projects-managed.png

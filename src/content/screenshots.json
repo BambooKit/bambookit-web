@@ -1,4 +1,46 @@
 {
-  "desktop": [],
-  "android": []
+  "desktop": [
+    {
+      "src": "/screenshots/desktop/bambookit-desktop-file-map.png",
+      "alt": "BambooKit desktop file map"
+    },
+    {
+      "src": "/screenshots/desktop/bambookit-desktop-project-diagram.png",
+      "alt": "BambooKit desktop project diagram"
+    },
+    {
+      "src": "/screenshots/desktop/bambookit-desktop-session-chat.png",
+      "alt": "BambooKit desktop session chat"
+    }
+  ],
+  "android": [
+    {
+      "src": "/screenshots/android/profile-achievements.png",
+      "alt": "Profile achievements"
+    },
+    {
+      "src": "/screenshots/android/profile-statistics.png",
+      "alt": "Profile statistics"
+    },
+    {
+      "src": "/screenshots/android/session-changes.png",
+      "alt": "Session changes"
+    },
+    {
+      "src": "/screenshots/android/session-chat.png",
+      "alt": "Session chat"
+    },
+    {
+      "src": "/screenshots/android/session-diagram-live.png",
+      "alt": "Session diagram live"
+    },
+    {
+      "src": "/screenshots/android/session-diff.png",
+      "alt": "Session diff"
+    },
+    {
+      "src": "/screenshots/android/session-summary.png",
+      "alt": "Session summary"
+    }
+  ]
 }
