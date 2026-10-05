@@ -325,15 +325,47 @@ export interface CodeStats {
   deployments: number;
 }
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  progress: number;
-  target: number;
-  unit: "count" | "ms";
+export type AchievementTierName = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+
+export interface AchievementTier {
+  name: AchievementTierName;
+  threshold: number;
   unlocked: boolean;
   unlockedAt: string | null;
+}
+
+/**
+ * One achievement. Tiered APIs send emoji, value, trackable, tiers, tier and nextTier; older APIs send only
+ * the flat fields (title, description, progress, target, unit "count" | "ms", unlocked, unlockedAt).
+ */
+export interface Achievement {
+  id: string;
+  emoji?: string;
+  title: string;
+  description: string;
+  /** lines, hours, days, nights, … ("count" / "ms" on older APIs). */
+  unit: string;
+  trackable?: boolean;
+  /** Why an untrackable achievement shows no progress. */
+  reason?: string;
+  value?: number;
+  tiers?: AchievementTier[];
+  tier?: AchievementTierName | null;
+  nextTier?: AchievementTierName | null;
+  progress: number;
+  target: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface AchievementSummary {
+  unlocked: number;
+  total: number;
+  tiersUnlocked: number;
+  tiersTotal: number;
+  points: number;
+  currentStreak: number;
+  longestStreak: number;
 }
 
 export interface ProfileStats {
@@ -345,7 +377,10 @@ export interface ProfileStats {
   codingTime: { totalMs: number; thisWeekMs: number; thisMonthMs: number; nightMs: number; longestMs: number };
   code: CodeStats;
   rules: { codingTime: string; files: string; nightHours: string };
+  streak?: { current: number; longest: number };
   achievements: Achievement[];
+  /** Missing on APIs before tiered achievements. */
+  achievementSummary?: AchievementSummary;
 }
 
 /* ---------------------------------------------------------------- service info */

@@ -450,7 +450,7 @@ Open **Profile** from the top bar or **Devices → Profile and settings**:
 | Header | Your photo (**Change photo**, **Remove**), name and member-since date |
 | Nickname | The name shown on your devices and this website |
 | Statistics | Projects, sessions, **Coding time** (this week, this month, total), code stats (files created and modified, lines added and removed, tests) and tasks completed |
-| Achievements | Unlocked and in-progress achievements, such as First Project, 1,000 Lines, Night Coder or Marathon |
+| Achievements | 50 achievements with Bronze to Diamond tiers, such as Code Written, Coding Streak, Night Coder or BambooKit Master |
 | Notifications, App lock, App updates, AI providers | Settings for this phone |
 | Account, Danger zone | Sign-in method and verification, **Sign out**, **Delete account…** |
 | Projects managed | At the bottom: every project with its PC, branch and coding time; mark it **Active**, **Completed** or **Archived** |
@@ -875,25 +875,70 @@ Your PC reports per-session totals computed from its own edit history, and each 
 
 ## Achievements
 
-Achievements unlock once and stay unlocked; you get an **Achievement unlocked** notification. Locked ones show your progress.
+There are **50 achievements**, each with five tiers: 🥉 **Bronze**, 🥈 **Silver**, 🥇 **Gold**, 💎 **Platinum** and 💠 **Diamond**, for **250 tiers** in all. Every value is computed by BambooKit Cloud from your real records (the per-session totals your PC reports, the time the agent actually worked, your approvals, devices and projects); nothing is estimated. A tier unlocks once and stays unlocked, and you get an **Achievement unlocked** notification (a single summary when many tiers unlock at once).
 
-| Achievement | Goal |
-|---|---|
-| First Project | Open your first project in BambooKit |
-| First Session | Complete your first AI coding session |
-| First Change | Make your first code change through BambooKit |
-| 100 Files | Create or modify 100 files |
-| 1,000 Lines | Add 1,000 lines of code |
-| Code Builder | Complete 10 agent tasks |
-| Project Manager | Manage 5 projects |
-| Night Coder | Code for 2 hours between 22:00 and 05:00 |
-| Debugger | Complete 3 debugging sessions |
-| Tester | Run 10 passing test commands |
-| Ship It | Complete a deployment |
-| Agent Commander | Run 10 agent sessions |
-| Long Session | Keep the agent working on one task for an hour |
-| Cleanup Crew | Remove 500 lines of obsolete code |
-| Marathon | Reach 24 hours of total coding time |
+On the [Account](/account/#achievements) page you see:
+
+- **Summary**: achievements at Bronze or better (of 50), tiers unlocked (of 250), points (1 for each Bronze, 2 Silver, 3 Gold, 4 Platinum, 5 Diamond) and your 🔥 current and best coding streak.
+- **Filters**: All, Unlocked, In progress and Not tracked.
+- **Each card**: the current tier medal, a progress bar to the next tier (for example **1,240 / 10,000 lines → Gold**) and five tier dots. Hover or tap the dots for every tier's goal and the date it unlocked.
+
+Days, nights and streaks use your time zone; night hours are 22:00–05:00. Prompts, tool calls, shell commands, sub-agents, MCP tools, installs, branches, merges, pull requests, cloud deployments, cleanups, documentation files, session intents (debugging, refactoring, review, experiment) and retries are reported by BambooKit Desktop 1.0.6 or later, so work from older versions does not count toward those.
+
+| Achievement | What counts | Bronze / Silver / Gold / Platinum / Diamond |
+|---|---|---|
+| 🔥 Coding Streak | Your longest run of consecutive days (in your time zone) with agent work or a new session | 1 / 7 / 30 / 60 / 360 days |
+| 💻 Code Written | Lines of code the agent added, from the per-session totals your PC reports | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
+| ✏️ Code Changes | Every edit the agent made; a file edited three times counts three | 10 / 100 / 1,000 / 5,000 / 10,000 edits |
+| 🗂️ Files Changed | Files created, modified, deleted or renamed; each file counts once per session | 5 / 50 / 250 / 1,000 / 5,000 files |
+| 🏗️ Projects Built | Projects with at least one session that changed a file | 1 / 5 / 10 / 25 / 50 projects |
+| 🤖 AI Sessions | Sessions in which the agent completed at least one task | 5 / 25 / 100 / 500 / 1,000 sessions |
+| 🧠 Prompts Sent | Prompts you sent to the agent | 10 / 100 / 1,000 / 5,000 / 10,000 prompts |
+| ⚡ Tasks Completed | Agent tasks (busy until idle) that finished without an error | 5 / 25 / 100 / 500 / 1,000 tasks |
+| 🐛 Bugs Fixed | Debugging sessions in which the agent completed work | 5 / 25 / 100 / 500 / 1,000 bugs |
+| 🕵️ Bug Hunter | Prompts asking to fix a bug, an error or a crash | 10 / 50 / 250 / 1,000 / 5,000 prompts |
+| 🧪 Tests Run | Test commands that finished, passed or failed | 10 / 100 / 500 / 2,500 / 10,000 runs |
+| ✅ Tests Passed | Test commands that passed | 10 / 100 / 500 / 2,500 / 10,000 runs |
+| 🚀 Deployments | Successful deploy commands (vercel, netlify, firebase, fly, npm publish, …) | 1 / 5 / 25 / 100 / 500 deploys |
+| ☁️ Cloud Builder | Deployments to hosted platforms (Vercel, Netlify, Firebase, Fly, Cloudflare, Render, package registries, Kubernetes) | 1 / 5 / 20 / 100 / 500 deploys |
+| 🔀 Commits | Successful git commits | 10 / 100 / 500 / 2,500 / 10,000 commits |
+| 🌿 Branches Created | Git branches created | 5 / 25 / 100 / 500 / 2,500 branches |
+| 🔀 Merges | Successful git merges | 5 / 25 / 100 / 500 / 2,500 merges |
+| 🛡️ Approvals | Permission requests you approved or rejected | 5 / 25 / 100 / 500 / 2,500 approvals |
+| 🔧 Tool Calls | Tools the agent called | 25 / 250 / 1,000 / 5,000 / 25,000 calls |
+| 🤖 Agent Tasks | Tasks the agent handed to sub-agents | 5 / 25 / 100 / 500 / 2,500 tasks |
+| 👥 Multi-Agent | Different agents and sub-agents used across your sessions | 2 / 5 / 10 / 25 / 50 agents |
+| 🧩 Integrations | Different MCP servers used (a tool's server is the part of its name before the first underscore) | 1 / 5 / 10 / 25 / 50 servers |
+| 🔌 MCP Tools | Different MCP tools used | 1 / 5 / 10 / 25 / 50 tools |
+| 🖥️ Terminal Commands | Shell commands the agent ran | 25 / 250 / 1,000 / 5,000 / 25,000 commands |
+| 📦 Packages Installed | Successful package installs (npm, pip, cargo, go, …) | 5 / 25 / 100 / 500 / 1,000 installs |
+| 🔥 Long Sessions | Active agent time in your single longest session | 1 / 5 / 25 / 100 / 500 hours |
+| ⏱️ Coding Time | Total time the agent was working for you (busy until idle or error, at most 6 hours per task) | 5 / 25 / 100 / 500 / 1,000 hours |
+| 🌙 Night Coder | Nights with agent work between 22:00 and 05:00 in your time zone; work after midnight counts for the evening before | 1 / 7 / 30 / 60 / 360 nights |
+| ⚡ Fast Fix | Debugging sessions completed within 10 minutes of agent time | 1 / 5 / 25 / 100 / 500 fixes |
+| 🎯 One-Shot Fix | Debugging sessions completed from a single prompt with no failed task | 1 / 5 / 25 / 100 / 500 fixes |
+| 🏆 Tasks Without Retry | Completed sessions with no retried or failed turn and no error | 5 / 25 / 100 / 500 / 1,000 sessions |
+| 📈 Successful Sessions | Completed sessions that finished idle, changed files and did not end with only failing tests | 5 / 25 / 100 / 500 / 1,000 sessions |
+| 🧹 Code Cleanup | Edits that removed more lines than they added | 5 / 25 / 100 / 500 / 2,500 cleanups |
+| 🗑️ Code Deleted | Lines of code the agent removed | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
+| ➕ Files Created | New files created | 5 / 50 / 250 / 1,000 / 5,000 files |
+| 🗑️ Files Deleted | Files deleted | 5 / 25 / 100 / 500 / 2,500 files |
+| ♻️ Refactors | Completed sessions that set out to refactor or clean up code | 5 / 25 / 100 / 500 / 2,500 sessions |
+| 📊 Projects Managed | Projects opened in BambooKit, whatever their status | 1 / 5 / 10 / 25 / 50 projects |
+| 🌐 Open Source | Open-source projects you work on. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 10 / 25 / 50 projects |
+| ⭐ GitHub Stars Earned | Stars on your GitHub repositories. **Not tracked yet**: needs a GitHub connection | 1 / 10 / 100 / 500 / 1,000 stars |
+| 🤝 Contributions | Contributions to other people's repositories. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 25 / 100 / 500 contributions |
+| 🏅 Pull Requests | Pull requests the agent opened (gh pr create) | 1 / 10 / 50 / 250 / 1,000 pull requests |
+| 🔥 Production Fixes | Debugging sessions that also deployed the fix | 1 / 5 / 25 / 100 / 500 fixes |
+| 📱 Devices Connected | PCs and phones connected to your account | 1 / 2 / 5 / 10 / 25 devices |
+| 🔐 Secure Actions | Permission requests you answered, plus provider API keys you set or removed end-to-end encrypted | 5 / 25 / 100 / 500 / 2,500 actions |
+| 🧑‍💻 Code Reviews | Completed sessions that set out to review or audit code | 5 / 25 / 100 / 500 / 2,500 reviews |
+| 📚 Documentation | Documentation files written or updated (Markdown, docs/ …) | 1 / 10 / 50 / 250 / 1,000 pages |
+| 🧪 Experiments | Completed sessions that set out to experiment or prototype | 5 / 25 / 100 / 500 / 2,500 experiments |
+| 🏎️ Speed Builder | Agent tasks (not sub-agent tasks) completed within 5 minutes | 5 / 25 / 100 / 500 / 1,000 tasks |
+| 👑 BambooKit Master | Other achievements at Bronze or better; this one counts itself once it reaches Bronze. Diamond needs all 50 | 10 / 25 / 35 / 45 / 50 achievements |
+
+**Not tracked yet**: Open Source, GitHub Stars Earned and Contributions need a GitHub connection, which is coming later. They appear greyed out with that reason and show no progress. Because **BambooKit Master** reaches Diamond only with all 50 achievements at Bronze or better, its Diamond tier waits for these three; Platinum (45) is reachable today.
 
 ## Projects managed
 

@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ChevronRight, Clock, Code2, FolderGit2, ListChecks, Lock, Trophy } from "lucide-react";
+import { ChevronRight, Clock, Code2, FolderGit2, ListChecks, Trophy } from "lucide-react";
 import { InlineError } from "@/components/ErrorInfo";
+import { Achievements } from "./Achievements";
 import { Card, EmptyState, ErrorState, LoadingState, Pill, Spinner, cx } from "@/components/ui";
 import { apiRequest, useResource } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { fullDate, timeAgo } from "@/lib/format";
 import { useRealtime } from "@/lib/realtime";
-import type { Achievement, ProfileStats as Stats, ProjectStat, ProjectStatus } from "@/lib/types";
+import type { ProfileStats as Stats, ProjectStat, ProjectStatus } from "@/lib/types";
 
 const n = (v: number | null | undefined) => (Number(v) || 0).toLocaleString();
 
@@ -108,42 +109,6 @@ function ProjectRow({ p, now, onStatus }: { p: ProjectStat; now: number; onStatu
   );
 }
 
-function AchievementCard({ a }: { a: Achievement }) {
-  const pct = a.target > 0 ? Math.min(100, Math.round((a.progress / a.target) * 100)) : 0;
-  const fmt = (v: number) => (a.unit === "ms" ? codingTime(v) : n(v));
-  return (
-    <li className={cx("rounded-lg border px-3 py-2.5", a.unlocked ? "border-bk-ok/40 bg-bk-ok/5" : "border-bk-line bg-bk-bg/40")}>
-      <div className="flex items-start gap-2">
-        <span className={cx("mt-0.5 shrink-0", a.unlocked ? "text-bk-ok" : "text-bk-faint")}>{a.unlocked ? <Trophy className="size-4" /> : <Lock className="size-4" />}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-x-2">
-            <span className={cx("text-sm font-medium", a.unlocked ? "text-bk-fg" : "text-bk-muted")}>{a.title}</span>
-            {a.unlocked && a.unlockedAt && (
-              <span className="text-[11px] text-bk-ok" title={fullDate(a.unlockedAt)}>
-                Unlocked {new Date(a.unlockedAt).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-bk-faint">{a.description}</p>
-          <div
-            className="mt-2 h-1.5 overflow-hidden rounded-full bg-bk-raised"
-            role="progressbar"
-            aria-label={`${a.title} progress`}
-            aria-valuemin={0}
-            aria-valuemax={a.target}
-            aria-valuenow={a.progress}
-          >
-            <div className={cx("h-full rounded-full", a.unlocked ? "bg-bk-ok" : "bg-bk-muted")} style={{ width: `${pct}%` }} />
-          </div>
-          <div className="mt-1 text-[11px] tabular-nums text-bk-faint">
-            {fmt(a.progress)} / {fmt(a.target)} · {pct}%
-          </div>
-        </div>
-      </div>
-    </li>
-  );
-}
-
 /** Profile statistics from GET /v1/me/stats. Every number is computed by the API from real records. */
 export function ProfileStats({ now }: { now: number }) {
   const { getToken } = useAuth();
@@ -153,12 +118,6 @@ export function ProfileStats({ now }: { now: number }) {
 
   useRealtime((e) => {
     if (e.type === "achievement.unlocked") {
-      const p = e.payload as { id?: string; unlockedAt?: string } | null;
-      if (p?.id) {
-        setData((d) =>
-          d ? { ...d, achievements: d.achievements.map((a) => (a.id === p.id ? { ...a, unlocked: true, unlockedAt: p.unlockedAt ?? a.unlockedAt, progress: a.target } : a)) } : d,
-        );
-      }
       reload();
     } else if (e.type === "project.updated" && e.payload?.id && e.payload?.status) {
       setData((d) => (d ? recount(d, d.projects.list.map((x) => (x.id === e.payload.id ? { ...x, status: e.payload.status } : x))) : d));
@@ -173,7 +132,9 @@ export function ProfileStats({ now }: { now: number }) {
   const s = stats.data;
   const projects = s.projects.list;
   const visible = showAll ? projects : projects.slice(0, 8);
-  const unlocked = s.achievements.filter((a) => a.unlocked).length;
+  const achievements = Array.isArray(s.achievements) ? s.achievements : [];
+  const unlocked = s.achievementSummary?.unlocked ?? achievements.filter((a) => a.unlocked).length;
+  const total = s.achievementSummary?.total ?? achievements.length;
 
   const setStatus = async (id: string, status: ProjectStatus) => {
     const before = s.projects.list;
@@ -261,21 +222,10 @@ export function ProfileStats({ now }: { now: number }) {
           id="achievements"
           icon={<Trophy className="size-4" />}
           title="Achievements"
-          action={<Pill tone={unlocked ? "ok" : "neutral"}>{`${unlocked} of ${s.achievements.length} unlocked`}</Pill>}
-          help="Progress comes from the statistics above. An achievement unlocks once and stays unlocked; new unlocks appear here live."
+          action={<Pill tone={unlocked ? "ok" : "neutral"}>{`${unlocked} of ${total} unlocked`}</Pill>}
+          help="Each achievement has five tiers, Bronze to Diamond, computed from your real BambooKit records. A tier unlocks once and stays unlocked; new tiers appear here live. Hover or tap the dots for every tier's goal and unlock date."
         >
-          {s.achievements.length === 0 ? (
-            <p className="text-sm text-bk-faint">No achievements are available yet.</p>
-          ) : (
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {s.achievements
-                .slice()
-                .sort((a, b) => Number(b.unlocked) - Number(a.unlocked) || b.progress / b.target - a.progress / a.target)
-                .map((a) => (
-                  <AchievementCard key={a.id} a={a} />
-                ))}
-            </ul>
-          )}
+          <Achievements achievements={achievements} summary={s.achievementSummary} streak={s.streak} />
         </Section>
       </div>
     </Card>
