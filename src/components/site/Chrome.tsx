@@ -102,6 +102,9 @@ export function SiteFooter() {
           <Link href="/security/" className="hover:text-bk-fg">Security</Link>
           <Link href="/privacy/" className="hover:text-bk-fg">Privacy</Link>
           <Link href="/terms/" className="hover:text-bk-fg">Terms</Link>
+          <Link href="/refunds/" className="hover:text-bk-fg">Refunds</Link>
+          <Link href="/delivery/" className="hover:text-bk-fg">Delivery</Link>
+          <Link href="/contact/" className="hover:text-bk-fg">Contact</Link>
           <a href={LINKS.discussions} className="hover:text-bk-fg" rel="noopener noreferrer">Support</a>
           <a href={LINKS.bugReport} className="hover:text-bk-fg" rel="noopener noreferrer">Report a bug</a>
           <a href={LINKS.featureRequest} className="hover:text-bk-fg" rel="noopener noreferrer">Feedback</a>
