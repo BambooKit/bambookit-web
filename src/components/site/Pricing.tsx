@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, Clock, Minus, PlayCircle, Sparkles } from "lucide-react";
+import { Check, Clock, Lightbulb, Minus, PlayCircle, Sparkles } from "lucide-react";
 import { Button, Notice, Pill, Spinner } from "@/components/ui";
 import { InlineError } from "@/components/ErrorInfo";
 import { ApiError, apiGet } from "@/lib/api";
@@ -29,8 +29,8 @@ function rows(plans: BillingPlans): Array<{ label: string; free: Cell; pro: Cell
     { label: "BambooKit Desktop agent with your own API keys", free: true, pro: true },
     { label: "Free BambooKit models", free: true, pro: true },
     { label: "Follow sessions, approve and answer questions from your phone", free: true, pro: true },
-    { label: "Chat from your phone", free: limitLabel(free.phoneMessagesPerDay, "messages / day"), pro: limitLabel(pro.phoneMessagesPerDay, "messages / day") },
-    { label: "New sessions from your phone", free: limitLabel(free.phoneSessionsPerDay, "/ day"), pro: limitLabel(pro.phoneSessionsPerDay, "/ day") },
+    { label: "Chat from your phone and the web", free: limitLabel(free.phoneMessagesPerDay, "messages / day"), pro: limitLabel(pro.phoneMessagesPerDay, "messages / day") },
+    { label: "New sessions from your phone and the web", free: limitLabel(free.phoneSessionsPerDay, "/ day"), pro: limitLabel(pro.phoneSessionsPerDay, "/ day") },
     { label: "PCs per account", free: String(free.desktops), pro: String(pro.desktops) },
     { label: "Ads in the Android app", free: "Yes", pro: "None" },
     { label: "Priority support", free: false, pro: true },
@@ -78,7 +78,7 @@ const FAQ: Array<{ q: string; a: ReactNode }> = [
     a: (
       <>
         Everything on your PC: the Desktop agent, your own API keys and the free BambooKit models. On the phone you can always follow sessions, approve and
-        answer questions. Free limits only apply to chatting and starting new sessions from the phone, and to the number of PCs.
+        answer questions. Free limits only apply to chatting and starting new sessions from the phone or this website, and to the number of PCs.
       </>
     ),
   },
@@ -87,6 +87,39 @@ const FAQ: Array<{ q: string; a: ReactNode }> = [
 function friendlyBuyError(err: unknown): string | null {
   if (err instanceof ApiError && err.code === "PAYMENTS_NOT_CONFIGURED") return "Payments are being set up — coming soon. Nothing was charged.";
   return null;
+}
+
+/** details.hint from a checkout error (e.g. 502 PAYMENT_PROVIDER_ERROR explaining a Cashfree setup problem). */
+function buyErrorHint(err: unknown): string | null {
+  if (!(err instanceof ApiError) || !err.details || typeof err.details !== "object") return null;
+  const hint = (err.details as Record<string, unknown>).hint;
+  return typeof hint === "string" && hint.trim() ? hint.trim() : null;
+}
+
+/** The API's message, the setup hint (when there is one) shown prominently, and the ⓘ details. */
+function BuyError({ error }: { error: unknown }) {
+  const hint = buyErrorHint(error);
+  const friendly = friendlyBuyError(error);
+  return (
+    <InlineError
+      className="mb-6"
+      error={error}
+      message={
+        <>
+          <span className="block">{friendly ?? (error instanceof Error && error.message ? error.message : "Checkout couldn't start. Nothing was charged.")}</span>
+          {hint && (
+            <span className="mt-2 flex items-start gap-2 rounded-md border border-bk-warn/40 bg-bk-warn/10 px-3 py-2 text-bk-warn">
+              <Lightbulb className="mt-0.5 size-4 shrink-0" />
+              <span>
+                <span className="font-medium">How to fix: </span>
+                {hint}
+              </span>
+            </span>
+          )}
+        </>
+      }
+    />
+  );
 }
 
 export function PricingView() {
@@ -225,7 +258,7 @@ export function PricingView() {
             onRetry={load}
           />
         )}
-        {buyError !== null && <InlineError className="mb-6" error={buyError} message={friendlyBuyError(buyError) ?? undefined} />}
+        {buyError !== null && <BuyError error={buyError} />}
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-bk-line bg-bk-panel p-6">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, FolderGit2, Heart, Monitor, Search, ShieldAlert, Sparkles, X } from "lucide-react";
 import { LikeButton } from "./LikeButton";
+import { NewSessionButton, NewSessionPanel } from "./NewSession";
 import { ButtonLink, Changes, EmptyState, ErrorState, LoadingState, OnlineDot, PageHeader, Pill, StatusBadge, cx } from "@/components/ui";
 import { useLiveDevices, useLiveSessions, useNow, sortSessions } from "@/lib/live";
 import { timeAgo, fullDate, plural } from "@/lib/format";
@@ -109,6 +110,7 @@ export function SessionsView() {
   const [status, setStatus] = useState<"" | SessionStatus>("");
   const [query, setQuery] = useState("");
   const [liked, setLiked] = useState(false);
+  const [creating, setCreating] = useState(false);
   // ?project=<id> (from the Account page's project list) shows only that project's sessions.
   const [project, setProject] = useState("");
   useEffect(() => {
@@ -140,7 +142,8 @@ export function SessionsView() {
   const header = (
     <PageHeader
       title="Sessions"
-      description="Every session on your PCs, updated live. View only: chat happens in BambooKit on your PC or in the Android app."
+      description="Every session on your PCs, updated live. Start new ones here, or open one and chat in it."
+      actions={<NewSessionButton open={creating} onToggle={() => setCreating((v) => !v)} />}
     />
   );
 
@@ -192,6 +195,7 @@ export function SessionsView() {
   return (
     <>
       {header}
+      {creating && <NewSessionPanel onClose={() => setCreating(false)} defaultProjectId={project || undefined} desktops={desktops} />}
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <PcList desktops={desktops} sessions={all} selected={pc} onSelect={setPc} now={now} />
         <section className="min-w-0">

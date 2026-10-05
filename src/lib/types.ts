@@ -50,6 +50,21 @@ export interface Session {
   updatedAt: string;
 }
 
+/** GET /v1/projects */
+export interface Project {
+  id: string;
+  deviceId: string;
+  deviceName: string | null;
+  name: string;
+  directory: string;
+  branch: string | null;
+  activeSessions: number;
+  totalSessions: number;
+  status?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Part {
   id: string;
   sessionId: string;

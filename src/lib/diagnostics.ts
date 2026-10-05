@@ -60,6 +60,26 @@ export function explainError(err: unknown): Explanation {
       actions: ["update-desktop", "retry"],
     };
   }
+  if (code === "PAYMENT_PROVIDER_ERROR") {
+    const hint = str(d.hint);
+    const env = str(d.environment);
+    return {
+      what,
+      why: [
+        ...(hint ? [hint] : []),
+        `The payment provider (Cashfree${env ? `, ${env}` : ""}) rejected or didn't answer the checkout request. Nothing was charged.`,
+        ...(str(d.providerMessage) ? [`Cashfree said: ${String(d.providerMessage)}`] : []),
+      ],
+      actions: ["retry"],
+    };
+  }
+  if (code === "PLAN_LIMIT") {
+    return {
+      what,
+      why: ["The free plan's daily allowance for this is used up. It resets at midnight in your time zone.", "Pro removes the daily limits."],
+      actions: ["refresh"],
+    };
+  }
   if (code === "ROUTE_NOT_FOUND") {
     const api = str(d.apiVersion) ?? err.apiVersion;
     return {
@@ -144,6 +164,20 @@ export function technicalRows(err: unknown, meta: ApiMeta | null): Array<[string
       add("Required version", d.requiredVersion);
       add("Capability", d.capability);
       add("Desktop protocol", d.desktopProtocol);
+    }
+    if (err.code === "PAYMENT_PROVIDER_ERROR") {
+      add("Provider status", d.providerStatus);
+      add("Provider code", d.providerCode);
+      add("Provider type", d.providerType);
+      add("Provider message", d.providerMessage);
+      add("Environment", d.environment);
+      add("Hint", d.hint);
+    }
+    if (err.code === "PLAN_LIMIT") {
+      add("Limit", d.limit);
+      add("Max", d.max);
+      add("Used", d.used);
+      add("Resets at", d.resetsAt);
     }
     if (err.code === "ROUTE_NOT_FOUND") {
       add("Route", d.method && d.path ? `${d.method} ${d.path}` : null);

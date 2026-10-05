@@ -1,12 +1,13 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 import { ButtonLink, Card, Pill, Spinner } from "@/components/ui";
 import { InlineError } from "@/components/ErrorInfo";
 import { useResource } from "@/lib/api";
 import { useRealtime } from "@/lib/realtime";
 import { fullDate } from "@/lib/format";
-import { formatMoney, productLabel, sourceLabel, type BillingOrder, type MyPlan, type OrderStatus } from "@/lib/billing";
+import { formatMoney, limitLabel, productLabel, sourceLabel, type BillingOrder, type OrderStatus } from "@/lib/billing";
+import { usePlan } from "@/lib/plan";
 
 const STATUS_TONE: Record<OrderStatus, "ok" | "warn" | "err" | "neutral"> = {
   PAID: "ok",
@@ -41,30 +42,26 @@ function Usage({ label, used, limit }: { label: string; used: number; limit: num
   );
 }
 
+/** What Pro unlocks, listed with lock icons for free accounts. */
+const WITH_PRO = ["Unlimited chat from phone & web", "Unlimited new sessions", "Up to 5 PCs", "No ads in the Android app"];
+
 /** Account → Plan: current plan, today's usage and billing history. Updates live on plan.updated. */
 export function PlanCard() {
-  const plan = useResource<MyPlan>("/v1/me/plan");
+  const plan = usePlan();
   const history = useResource<BillingOrder[]>("/v1/billing/history");
 
   useRealtime((e) => {
-    if (e.type === "plan.updated") {
-      if (e.payload && typeof e.payload === "object" && "plan" in e.payload) plan.setData(e.payload as MyPlan);
-      else plan.reload();
-      history.reload();
-    } else if (e.type === "ready" && e.payload?.reconnect) {
-      plan.reload();
-      history.reload();
-    }
+    if (e.type === "plan.updated" || (e.type === "ready" && e.payload?.reconnect)) history.reload();
   });
 
-  const p = plan.data;
+  const p = plan.plan;
   const pro = p?.plan === "pro";
   const orders = history.data ?? [];
 
   return (
     <section id="plan" className="scroll-mt-20">
       <h2 className="mb-1 font-medium text-bk-fg">Plan</h2>
-      <p className="mb-3 text-sm text-bk-muted">Your BambooKit plan, today&apos;s phone usage and your payments.</p>
+      <p className="mb-3 text-sm text-bk-muted">Your BambooKit plan, today&apos;s phone and web usage and your payments.</p>
       <Card className="p-4 sm:p-5">
         {!p && plan.loading && (
           <div className="flex items-center gap-2 text-sm text-bk-muted">
@@ -87,7 +84,7 @@ export function PlanCard() {
                     ? p.proUntil
                       ? <>Pro until <span className="text-bk-fg" title={fullDate(p.proUntil)}>{longDate(p.proUntil)}</span>.</>
                       : "Pro is active."
-                    : "Free plan. Upgrade for unlimited phone chat and sessions, up to 5 PCs and no ads on Android."}
+                    : `Free plan: ${limitLabel(p.limits.phoneMessagesPerDay, "messages")} and ${limitLabel(p.limits.phoneSessionsPerDay, "new sessions")} a day from your phone and this website, ${p.limits.desktops === 1 ? "one PC" : `${p.limits.desktops} PCs`}.`}
                 </p>
               </div>
               <ButtonLink href="/pricing/" variant={pro ? "secondary" : "primary"} className="px-3 py-1.5 text-xs">
@@ -95,9 +92,24 @@ export function PlanCard() {
               </ButtonLink>
             </div>
 
+            {!pro && (
+              <div className="mt-4 rounded-lg border border-bk-line bg-bk-bg px-3 py-2.5">
+                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-bk-fg">
+                  <Sparkles className="size-3.5" /> With Pro
+                </div>
+                <ul className="grid gap-1 text-sm text-bk-muted sm:grid-cols-2">
+                  {WITH_PRO.map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <Lock className="size-3.5 shrink-0 text-bk-faint" aria-label="Locked on Free" /> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <Usage label="Phone messages today" used={p.usage.phoneMessagesToday} limit={p.limits.phoneMessagesPerDay} />
-              <Usage label="New sessions from phone today" used={p.usage.phoneSessionsToday} limit={p.limits.phoneSessionsPerDay} />
+              <Usage label="Phone & web messages today" used={p.usage.phoneMessagesToday} limit={p.limits.phoneMessagesPerDay} />
+              <Usage label="New sessions from phone & web today" used={p.usage.phoneSessionsToday} limit={p.limits.phoneSessionsPerDay} />
               <Usage label="PCs" used={p.usage.desktops} limit={p.limits.desktops} />
             </div>
             <p className="mt-2 text-xs text-bk-faint">

@@ -12,6 +12,8 @@ import { apiRequest, useResource } from "@/lib/api";
 import { RealtimeProvider, useLiveState, useRealtime } from "@/lib/realtime";
 import { useProfile } from "@/lib/profile";
 import { Toaster } from "./Toaster";
+import { PlanChip } from "./PlanLimits";
+import { PlanProvider } from "@/lib/plan";
 import type { Approval } from "@/lib/types";
 
 const TABS = [
@@ -214,6 +216,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3">
+            <PlanChip />
             <LiveIndicator />
             <UserMenu profile={profile} />
           </div>
@@ -240,12 +243,14 @@ function ShellFrame({ children }: { children: ReactNode }) {
   );
 }
 
-/** Signed-in app shell: auth guard, realtime stream and app navigation. */
+/** Signed-in app shell: auth guard, realtime stream, the account plan and app navigation. */
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
       <RealtimeProvider>
-        <ShellFrame>{children}</ShellFrame>
+        <PlanProvider>
+          <ShellFrame>{children}</ShellFrame>
+        </PlanProvider>
       </RealtimeProvider>
     </RequireAuth>
   );

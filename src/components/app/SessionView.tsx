@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Brain, ChevronRight, Check, CircleCheck, Clock, Eye, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, Pencil, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench, X } from "lucide-react";
+import { ArrowLeft, Brain, ChevronRight, Check, CircleCheck, Clock, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, Pencil, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench, X } from "lucide-react";
 import { RichText } from "./RichText";
+import { Composer } from "./Composer";
 import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
 import { ErrorInfo, InlineError } from "@/components/ErrorInfo";
 import { ApprovalItem } from "./ApprovalsView";
@@ -17,8 +18,6 @@ import { useLiveDevices, useNow } from "@/lib/live";
 import { useLiveState, useRealtime } from "@/lib/realtime";
 import { fullDate, plural, timeAgo } from "@/lib/format";
 import type { Approval, ChangedFile, Part, Session, SessionHistoryResponse } from "@/lib/types";
-
-const VIEW_ONLY = "View only. Chat in BambooKit on your PC, or in the Android app.";
 
 function sortParts(parts: Part[]): Part[] {
   return parts.slice().sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0));
@@ -124,7 +123,8 @@ function Transcript({ parts }: { parts: Part[] }) {
   );
 }
 
-function ChatPanel({ parts, busy }: { parts: Resource<Part[]>; busy: boolean }) {
+function ChatPanel({ parts, session, pcName }: { parts: Resource<Part[]>; session: Session; pcName: string }) {
+  const busy = session.status === "busy";
   const scroller = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const count = parts.data?.length ?? 0;
@@ -179,10 +179,7 @@ function ChatPanel({ parts, busy }: { parts: Resource<Part[]>; busy: boolean }) 
           </Notice>
         )}
       </div>
-      <div className="flex items-start gap-2 border-t border-bk-line bg-bk-bg/40 px-4 py-3 text-xs text-bk-muted">
-        <Eye className="mt-0.5 size-3.5 shrink-0 text-bk-faint" />
-        <span>{VIEW_ONLY}</span>
-      </div>
+      <Composer session={session} pcName={pcName} />
     </Card>
   );
 }
@@ -252,8 +249,8 @@ function affectsHistory(type: string, payload: any): boolean {
   return type === "session.updated" || type === "session.diff" || type === "session.transcript" || type.startsWith("approval.");
 }
 
-/** Asks the PC to open this session in BambooKit (CONTINUE_ON_PC). The website never sends chat messages. */
-function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOnline: boolean; pcName: string }) {
+/** Asks the PC to open this session in BambooKit (CONTINUE_ON_PC); after that it can be chatted in from here. */
+function ContinueOnPc({ sessionId, remote, pcOnline, pcName }: { sessionId: string; remote: boolean; pcOnline: boolean; pcName: string }) {
   const { getToken } = useAuth();
   const [state, setState] = useState<"idle" | "busy" | "sent" | "queued">("idle");
   const [error, setError] = useState<unknown>(null);
@@ -275,7 +272,9 @@ function ContinueOnPc({ sessionId, pcOnline, pcName }: { sessionId: string; pcOn
       <div className="flex flex-wrap items-center gap-3">
         <Laptop className="size-5 shrink-0 text-bk-faint" />
         <p className="min-w-0 flex-1 text-sm text-bk-muted">
-          This page is view only. Chatting happens in BambooKit on your PC or in the Android app.
+          {remote
+            ? "You can chat in this session from the Chat tab. Continue on PC also opens it in BambooKit on your PC."
+            : "Continue this session on your PC once, then you can chat in it from the Chat tab here, or in the Android app."}
           {!pcOnline && <span className="block text-xs text-bk-faint">{pcName} is offline. Open BambooKit on it to continue this session.</span>}
         </p>
         <Button
@@ -650,7 +649,7 @@ export function SessionView() {
       <div id="waiting-requests">
         <WaitingRequests approvals={waiting} now={now} />
       </div>
-      {!removed && <ContinueOnPc sessionId={s.id} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />}
+      {!removed && <ContinueOnPc sessionId={s.id} remote={!!s.remote} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />}
 
       {removed && (
         <Notice tone="warn" className="mb-4">
@@ -687,7 +686,7 @@ export function SessionView() {
       <div role="tabpanel" aria-label={TAB_LABEL[tab]}>
         {tab === "chat" ? (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <ChatPanel parts={parts} busy={s.status === "busy"} />
+            <ChatPanel parts={parts} session={s} pcName={pc?.name ?? "your PC"} />
             <ChangesPanel changes={changes} onOpen={openChange} />
           </div>
         ) : (
