@@ -14,6 +14,7 @@ export { LINKS };
 const NAV = [
   { href: "/docs/", label: "Docs", match: "/docs" },
   { href: "/docs/install/", label: "Install", match: "/docs/install" },
+  { href: "/pricing/", label: "Pricing", match: "/pricing" },
 ];
 
 function AccountLink({ className }: { className?: string }) {
@@ -97,6 +98,7 @@ export function SiteFooter() {
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/docs/" className="hover:text-bk-fg">Docs</Link>
+          <Link href="/pricing/" className="hover:text-bk-fg">Pricing</Link>
           <Link href="/security/" className="hover:text-bk-fg">Security</Link>
           <Link href="/privacy/" className="hover:text-bk-fg">Privacy</Link>
           <Link href="/terms/" className="hover:text-bk-fg">Terms</Link>

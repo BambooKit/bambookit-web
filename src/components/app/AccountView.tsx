@@ -12,6 +12,7 @@ import { fullDate, plural, timeAgo } from "@/lib/format";
 import { useLiveDevices, useNow } from "@/lib/live";
 import { LatestReleases } from "@/components/Releases";
 import { ProfileStats } from "./ProfileStats";
+import { PlanCard } from "./PlanCard";
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, DELETE_CONFIRMATION, NICKNAME_MAX, notifyProfileChanged, useProfile } from "@/lib/profile";
 import { useBrowserNotifications } from "@/lib/notifications";
 import type { AvatarUpload, Me } from "@/lib/types";
@@ -471,7 +472,7 @@ export function AccountView() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Account" description="Your BambooKit profile, statistics, downloads and sign-in." actions={signOutButton} />
+      <PageHeader title="Account" description="Your BambooKit profile, plan, statistics, downloads and sign-in." actions={signOutButton} />
       <div className="space-y-5">
         <ProfileCard
           me={m}
@@ -533,6 +534,8 @@ export function AccountView() {
             </Row>
           </dl>
         </Card>
+
+        <PlanCard />
 
         <ProfileStats now={now} />
 

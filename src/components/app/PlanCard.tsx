@@ -1,0 +1,149 @@
+"use client";
+
+import { Sparkles } from "lucide-react";
+import { ButtonLink, Card, Pill, Spinner } from "@/components/ui";
+import { InlineError } from "@/components/ErrorInfo";
+import { useResource } from "@/lib/api";
+import { useRealtime } from "@/lib/realtime";
+import { fullDate } from "@/lib/format";
+import { formatMoney, productLabel, sourceLabel, type BillingOrder, type MyPlan, type OrderStatus } from "@/lib/billing";
+
+const STATUS_TONE: Record<OrderStatus, "ok" | "warn" | "err" | "neutral"> = {
+  PAID: "ok",
+  PENDING: "warn",
+  FAILED: "err",
+  EXPIRED: "neutral",
+};
+
+const STATUS_LABEL: Record<OrderStatus, string> = { PAID: "Paid", PENDING: "Pending", FAILED: "Failed", EXPIRED: "Expired" };
+
+function longDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? "" : new Date(t).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
+
+function Usage({ label, used, limit }: { label: string; used: number; limit: number | null }) {
+  const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  return (
+    <div className="rounded-lg border border-bk-line bg-bk-bg px-3 py-2.5">
+      <div className="text-xs text-bk-faint">{label}</div>
+      <div className="mt-0.5 text-sm tabular-nums text-bk-fg">
+        {used}
+        <span className="text-bk-muted"> / {limit === null ? "unlimited" : limit}</span>
+      </div>
+      {limit !== null && (
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-bk-raised" aria-hidden="true">
+          <div className={pct >= 100 ? "h-full bg-bk-warn" : "h-full bg-bk-ok"} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Account → Plan: current plan, today's usage and billing history. Updates live on plan.updated. */
+export function PlanCard() {
+  const plan = useResource<MyPlan>("/v1/me/plan");
+  const history = useResource<BillingOrder[]>("/v1/billing/history");
+
+  useRealtime((e) => {
+    if (e.type === "plan.updated") {
+      if (e.payload && typeof e.payload === "object" && "plan" in e.payload) plan.setData(e.payload as MyPlan);
+      else plan.reload();
+      history.reload();
+    } else if (e.type === "ready" && e.payload?.reconnect) {
+      plan.reload();
+      history.reload();
+    }
+  });
+
+  const p = plan.data;
+  const pro = p?.plan === "pro";
+  const orders = history.data ?? [];
+
+  return (
+    <section id="plan" className="scroll-mt-20">
+      <h2 className="mb-1 font-medium text-bk-fg">Plan</h2>
+      <p className="mb-3 text-sm text-bk-muted">Your BambooKit plan, today&apos;s phone usage and your payments.</p>
+      <Card className="p-4 sm:p-5">
+        {!p && plan.loading && (
+          <div className="flex items-center gap-2 text-sm text-bk-muted">
+            <Spinner /> Loading your plan…
+          </div>
+        )}
+        {!p && plan.error && <InlineError error={plan.error} message="Couldn't load your plan." onRetry={plan.reload} />}
+        {p && (
+          <>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill tone={pro ? "ok" : "neutral"} className="text-xs">
+                    {pro && <Sparkles className="size-3" />} {pro ? "Pro" : "Free"}
+                  </Pill>
+                  {pro && p.source && <span className="text-xs text-bk-faint">{sourceLabel(p.source)}</span>}
+                </div>
+                <p className="mt-2 text-sm text-bk-muted">
+                  {pro
+                    ? p.proUntil
+                      ? <>Pro until <span className="text-bk-fg" title={fullDate(p.proUntil)}>{longDate(p.proUntil)}</span>.</>
+                      : "Pro is active."
+                    : "Free plan. Upgrade for unlimited phone chat and sessions, up to 5 PCs and no ads on Android."}
+                </p>
+              </div>
+              <ButtonLink href="/pricing/" variant={pro ? "secondary" : "primary"} className="px-3 py-1.5 text-xs">
+                <Sparkles className="size-3.5" /> {pro ? "Extend Pro" : "Upgrade to Pro"}
+              </ButtonLink>
+            </div>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <Usage label="Phone messages today" used={p.usage.phoneMessagesToday} limit={p.limits.phoneMessagesPerDay} />
+              <Usage label="New sessions from phone today" used={p.usage.phoneSessionsToday} limit={p.limits.phoneSessionsPerDay} />
+              <Usage label="PCs" used={p.usage.desktops} limit={p.limits.desktops} />
+            </div>
+            <p className="mt-2 text-xs text-bk-faint">
+              {p.resetsAt ? <>Daily limits reset {fullDate(p.resetsAt)}. </> : null}
+              {p.ads ? `On Android, watch a short ad for ${p.rewards.hours} h of Pro (${p.rewards.todayCount} of ${p.rewards.maxPerDay} used today).` : "No ads in the Android app."}
+            </p>
+          </>
+        )}
+
+        <div className="mt-5 border-t border-bk-line pt-4">
+          <h3 className="text-sm font-medium text-bk-fg">Billing history</h3>
+          {history.error && !history.data && <InlineError className="mt-2" error={history.error} message="Couldn't load your payments." onRetry={history.reload} />}
+          {!history.error && !history.data && history.loading && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-bk-muted">
+              <Spinner /> Loading…
+            </div>
+          )}
+          {history.data && orders.length === 0 && <p className="mt-1 text-sm text-bk-faint">No payments yet.</p>}
+          {orders.length > 0 && (
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full min-w-[460px] text-sm">
+                <thead>
+                  <tr className="border-b border-bk-line text-left text-xs text-bk-faint">
+                    <th className="py-2 pr-3 font-medium">Date</th>
+                    <th className="py-2 pr-3 font-medium">Product</th>
+                    <th className="py-2 pr-3 font-medium">Amount</th>
+                    <th className="py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id} className="border-b border-bk-line last:border-0" title={`Order ${o.id}`}>
+                      <td className="py-2 pr-3 text-bk-muted">{longDate(o.paidAt ?? o.createdAt)}</td>
+                      <td className="py-2 pr-3 text-bk-fg">{productLabel(o.productId)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-bk-fg">{formatMoney(o.amount, o.currency)}</td>
+                      <td className="py-2">
+                        <Pill tone={STATUS_TONE[o.status] ?? "neutral"}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Card>
+    </section>
+  );
+}

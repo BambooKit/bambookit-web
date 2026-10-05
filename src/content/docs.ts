@@ -993,6 +993,57 @@ Locked: Unlock → fingerprint, face or screen lock → app
 `,
   },
   {
+    slug: "plans",
+    title: "Plans and billing",
+    section: "Features",
+    summary: "Free and Pro, Pro passes, paying with Cashfree and rewarded ads on Android.",
+    body: `
+BambooKit is free to use on your PC. **Pro** removes the limits on your phone, lets you connect more PCs and turns off ads in the Android app. See [Pricing](/pricing).
+
+## Free and Pro
+
+| | Free | Pro |
+|---|---|---|
+| Desktop agent, your own API keys, free BambooKit models | Yes | Yes |
+| Follow sessions, approve and answer questions from your phone | Yes | Yes |
+| Chat from your phone | 20 messages a day | Unlimited |
+| New sessions from your phone | 3 a day | Unlimited |
+| PCs per account | 1 | 5 |
+| Ads in the Android app | Yes | None |
+| Priority support | No | Yes |
+
+Daily limits reset once a day; the [Account](/account#plan) page shows today's usage and when it resets. Desktop and this website never show ads.
+
+## Pro passes
+
+Pro is sold as a pass: **₹199 for a month** or **₹1,999 for a year** (2 months free). Passes don't renew automatically, so there is nothing to cancel. When a pass ends you go back to Free; buy another pass to keep Pro. Buying while you already have Pro adds the new pass to the end of the current one.
+
+## Buying Pro
+
+1. Open [Pricing](/pricing) and choose **Get Pro** (sign in first if asked).
+2. Cashfree's secure checkout opens. Pay with UPI, a card or netbanking.
+3. You come back to this site, which waits for the payment to be confirmed and then shows **You're on Pro until** the end date.
+
+Pro applies to your account, so all your devices get it right away; the Account page updates by itself. Prices are in Indian rupees and include taxes as applicable.
+
+Payments are processed by **Cashfree Payments**. BambooKit never sees or stores your card or UPI details; it keeps only the order (product, amount, status and dates).
+
+## Rewarded ads on Android
+
+On the free plan, the Android app can show a short ad that gives you **24 hours of Pro**, up to **2 times a day**. In the EEA and the UK the app asks for your consent to ads first (Google's consent form).
+
+## Billing history and refunds
+
+**Account → Plan** lists your payments with their date, product, amount and status. If a payment went wrong, ask in [GitHub Discussions](https://github.com/BambooKit/bambookit-application/discussions) with the order ID (hover a row on the Account page to see it).
+
+## If a payment is stuck
+
+- **Processing** for more than a minute: the bank hasn't confirmed yet. Leave it; Pro is added as soon as Cashfree confirms, and the Account page updates by itself.
+- **Failed** or **Expired**: you weren't charged for that order. Try again from [Pricing](/pricing).
+- **Payments are being set up — coming soon** on the Pricing page means buying isn't open yet.
+`,
+  },
+  {
     slug: "models",
     title: "Models and providers",
     section: "Desktop tools",
@@ -1532,7 +1583,7 @@ No. Keys stay on your PC and model requests go directly from your PC to the prov
 
 ## Is it free?
 
-The apps are free and the BambooKit provider includes free models. Your own provider keys are billed by that provider.
+The apps are free and the BambooKit provider includes free models. Your own provider keys are billed by that provider. The free plan has daily limits on chatting and starting sessions from the phone and allows one PC; **Pro** removes them. See [Plans and billing](/docs/plans).
 
 ## Can I start a session or chat from my phone?
 

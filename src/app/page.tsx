@@ -303,7 +303,44 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <section className="border-y border-bk-line bg-bk-panel/40">
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-center">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Free on your PC. Pro when you want more.</h2>
+              <p className="mt-2 text-bk-muted">
+                The Desktop agent, your own API keys and the free BambooKit models are free. Pro removes the phone limits, adds PCs and turns off ads in the
+                Android app.
+              </p>
+              <Link href="/pricing/" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-bk-fg hover:opacity-90">
+                See pricing <ArrowRight className="size-4" />
+              </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-bk-line bg-bk-bg p-5">
+                <div className="text-sm font-medium">Free</div>
+                <div className="mt-1 text-2xl font-semibold">₹0</div>
+                <ul className="mt-3 space-y-1.5 text-sm text-bk-muted">
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> Full Desktop agent</li>
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> 20 phone messages, 3 new sessions a day</li>
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> 1 PC</li>
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-bk-accent/40 bg-bk-bg p-5">
+                <div className="text-sm font-medium">Pro</div>
+                <div className="mt-1 text-2xl font-semibold">
+                  ₹199<span className="text-sm font-normal text-bk-muted"> / month</span>
+                </div>
+                <ul className="mt-3 space-y-1.5 text-sm text-bk-muted">
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> Unlimited phone chat and sessions</li>
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> Up to 5 PCs, no ads</li>
+                  <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-bk-ok" /> Or ₹1,999 a year (2 months free)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <div className="bk-glow flex flex-col items-start gap-5 rounded-2xl border border-bk-line bg-bk-panel p-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Already using BambooKit Desktop?</h2>
