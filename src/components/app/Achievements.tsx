@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Flame } from "lucide-react";
 import { cx } from "@/components/ui";
+import { AchievementBadge, TIER_FILL, type BadgeState } from "@/components/app/AchievementBadge";
 import { fullDate } from "@/lib/format";
 import type { Achievement, AchievementSummary, AchievementTier, AchievementTierName } from "@/lib/types";
 
 const TIER_ORDER: AchievementTierName[] = ["bronze", "silver", "gold", "platinum", "diamond"];
 const TIER_LABEL: Record<AchievementTierName, string> = { bronze: "Bronze", silver: "Silver", gold: "Gold", platinum: "Platinum", diamond: "Diamond" };
-const TIER_MEDAL: Record<AchievementTierName, string> = { bronze: "🥉", silver: "🥈", gold: "🥇", platinum: "💎", diamond: "💠" };
 const TIER_POINTS: Record<AchievementTierName, number> = { bronze: 1, silver: 2, gold: 3, platinum: 4, diamond: 5 };
 
 const full = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
@@ -47,7 +48,6 @@ const dateOnly = (iso: string) => {
 /** The achievement as the tiered UI sees it, whatever shape the API sent. */
 interface View {
   a: Achievement;
-  emoji: string;
   trackable: boolean;
   value: number;
   tiers: AchievementTier[] | null;
@@ -71,7 +71,6 @@ function view(a: Achievement): View {
   }
   return {
     a,
-    emoji: a.emoji || "🏆",
     trackable,
     value,
     tiers,
@@ -81,6 +80,20 @@ function view(a: Achievement): View {
     target: Number(a.target) || 0,
     unlocked: tiers ? tier !== null : !!a.unlocked,
   };
+}
+
+const TIER_TEXT: Record<AchievementTierName, string> = {
+  bronze: "text-bk-tier-bronze",
+  silver: "text-bk-tier-silver",
+  gold: "text-bk-tier-gold",
+  platinum: "text-bk-tier-platinum",
+  diamond: "text-bk-tier-diamond",
+};
+
+function badgeState(v: View): BadgeState {
+  if (!v.trackable) return { kind: "untracked" };
+  if (v.tier) return { kind: "tier", tier: v.tier };
+  return v.unlocked ? { kind: "unlocked" } : { kind: "locked" };
 }
 
 const maxed = (v: View) => (v.tiers ? v.next === null && v.tier !== null : v.unlocked);
@@ -125,7 +138,7 @@ function summarize(views: View[], given: AchievementSummary | undefined, streak:
   };
 }
 
-function SummaryTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function SummaryTile({ label, value, sub }: { label: ReactNode; value: string; sub?: string }) {
   return (
     <div className="min-w-0 rounded-lg border border-bk-line bg-bk-bg/40 px-3 py-2.5">
       <div className="truncate text-xs text-bk-muted">{label}</div>
@@ -152,7 +165,7 @@ function TierDots({ v }: { v: View }) {
             key={t.name}
             className={cx(
               "size-2 rounded-full border",
-              t.unlocked ? "border-bk-ok bg-bk-ok" : v.trackable && t.name === v.next ? "border-bk-muted bg-transparent" : "border-bk-line bg-bk-raised",
+              t.unlocked ? cx("border-transparent", TIER_FILL[t.name]) : v.trackable && t.name === v.next ? "border-bk-muted bg-transparent" : "border-bk-line bg-bk-raised",
             )}
           />
         ))}
@@ -166,7 +179,7 @@ function TierDots({ v }: { v: View }) {
           {tiers.map((t) => (
             <li key={t.name} className="flex items-center justify-between gap-2 text-[11px]">
               <span className={cx("inline-flex items-center gap-1.5", t.unlocked ? "text-bk-fg" : "text-bk-faint")}>
-                <span aria-hidden>{TIER_MEDAL[t.name]}</span>
+                <span className={cx("size-2 rounded-full", t.unlocked ? TIER_FILL[t.name] : "border border-bk-line")} aria-hidden />
                 {TIER_LABEL[t.name]} · {thresholdLabel(t.threshold, unit)}
               </span>
               <span className={cx("shrink-0 tabular-nums", t.unlocked ? "text-bk-ok" : "text-bk-faint")} title={t.unlockedAt ? fullDate(t.unlockedAt) : undefined}>
@@ -191,16 +204,15 @@ function AchievementCard({ v }: { v: View }) {
         !v.trackable ? "border-dashed border-bk-line bg-bk-bg/20 opacity-60" : v.unlocked ? "border-bk-ok/40 bg-bk-ok/5" : "border-bk-line bg-bk-bg/40",
       )}
     >
-      <div className="flex items-start gap-2.5">
-        <span className={cx("shrink-0 text-2xl leading-none", !v.unlocked && "grayscale")} aria-hidden>
-          {v.emoji}
-        </span>
+      <div className="flex items-start gap-3">
+        <AchievementBadge id={a.id} state={badgeState(v)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <span className={cx("text-sm font-medium", v.unlocked ? "text-bk-fg" : "text-bk-muted")}>{a.title}</span>
             {v.tier ? (
-              <span className="shrink-0 text-[11px] font-medium text-bk-ok" title={`Current tier: ${TIER_LABEL[v.tier]}`}>
-                <span aria-hidden>{TIER_MEDAL[v.tier]}</span> {TIER_LABEL[v.tier]}
+              <span className={cx("inline-flex shrink-0 items-center gap-1 text-[11px] font-medium", TIER_TEXT[v.tier])} title={`Current tier: ${TIER_LABEL[v.tier]}`}>
+                <span className={cx("size-2 rounded-full", TIER_FILL[v.tier])} aria-hidden />
+                {TIER_LABEL[v.tier]}
               </span>
             ) : !v.tiers && v.unlocked ? (
               <span className="shrink-0 text-[11px] font-medium text-bk-ok">Unlocked</span>
@@ -286,7 +298,7 @@ export function Achievements({
         <SummaryTile label="Achievements" value={`${formatCount(s.unlocked)} of ${formatCount(s.total)}`} sub="at Bronze or better" />
         <SummaryTile label="Tiers" value={`${formatCount(s.tiersUnlocked)} of ${formatCount(s.tiersTotal)}`} sub="Bronze to Diamond" />
         <SummaryTile label="Points" value={formatCount(s.points)} sub="1 per Bronze … 5 per Diamond" />
-        <SummaryTile label="🔥 Streak" value={`${formatCount(s.currentStreak)} ${s.currentStreak === 1 ? "day" : "days"}`} sub={`Best ${formatCount(s.longestStreak)} ${s.longestStreak === 1 ? "day" : "days"}`} />
+        <SummaryTile label={<span className="inline-flex items-center gap-1"><Flame className="size-3" aria-hidden="true" />Streak</span>} value={`${formatCount(s.currentStreak)} ${s.currentStreak === 1 ? "day" : "days"}`} sub={`Best ${formatCount(s.longestStreak)} ${s.longestStreak === 1 ? "day" : "days"}`} />
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Filter achievements">

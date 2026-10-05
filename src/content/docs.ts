@@ -887,56 +887,56 @@ Days, nights and streaks use your time zone; night hours are 22:00–05:00. Prom
 
 | Achievement | What counts | Bronze / Silver / Gold / Platinum / Diamond |
 |---|---|---|
-| 🔥 Coding Streak | Your longest run of consecutive days (in your time zone) with agent work or a new session | 1 / 7 / 30 / 60 / 360 days |
-| 💻 Code Written | Lines of code the agent added, from the per-session totals your PC reports | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
-| ✏️ Code Changes | Every edit the agent made; a file edited three times counts three | 10 / 100 / 1,000 / 5,000 / 10,000 edits |
-| 🗂️ Files Changed | Files created, modified, deleted or renamed; each file counts once per session | 5 / 50 / 250 / 1,000 / 5,000 files |
-| 🏗️ Projects Built | Projects with at least one session that changed a file | 1 / 5 / 10 / 25 / 50 projects |
-| 🤖 AI Sessions | Sessions in which the agent completed at least one task | 5 / 25 / 100 / 500 / 1,000 sessions |
-| 🧠 Prompts Sent | Prompts you sent to the agent | 10 / 100 / 1,000 / 5,000 / 10,000 prompts |
-| ⚡ Tasks Completed | Agent tasks (busy until idle) that finished without an error | 5 / 25 / 100 / 500 / 1,000 tasks |
-| 🐛 Bugs Fixed | Debugging sessions in which the agent completed work | 5 / 25 / 100 / 500 / 1,000 bugs |
-| 🕵️ Bug Hunter | Prompts asking to fix a bug, an error or a crash | 10 / 50 / 250 / 1,000 / 5,000 prompts |
-| 🧪 Tests Run | Test commands that finished, passed or failed | 10 / 100 / 500 / 2,500 / 10,000 runs |
-| ✅ Tests Passed | Test commands that passed | 10 / 100 / 500 / 2,500 / 10,000 runs |
-| 🚀 Deployments | Successful deploy commands (vercel, netlify, firebase, fly, npm publish, …) | 1 / 5 / 25 / 100 / 500 deploys |
-| ☁️ Cloud Builder | Deployments to hosted platforms (Vercel, Netlify, Firebase, Fly, Cloudflare, Render, package registries, Kubernetes) | 1 / 5 / 20 / 100 / 500 deploys |
-| 🔀 Commits | Successful git commits | 10 / 100 / 500 / 2,500 / 10,000 commits |
-| 🌿 Branches Created | Git branches created | 5 / 25 / 100 / 500 / 2,500 branches |
-| 🔀 Merges | Successful git merges | 5 / 25 / 100 / 500 / 2,500 merges |
-| 🛡️ Approvals | Permission requests you approved or rejected | 5 / 25 / 100 / 500 / 2,500 approvals |
-| 🔧 Tool Calls | Tools the agent called | 25 / 250 / 1,000 / 5,000 / 25,000 calls |
-| 🤖 Agent Tasks | Tasks the agent handed to sub-agents | 5 / 25 / 100 / 500 / 2,500 tasks |
-| 👥 Multi-Agent | Different agents and sub-agents used across your sessions | 2 / 5 / 10 / 25 / 50 agents |
-| 🧩 Integrations | Different MCP servers used (a tool's server is the part of its name before the first underscore) | 1 / 5 / 10 / 25 / 50 servers |
-| 🔌 MCP Tools | Different MCP tools used | 1 / 5 / 10 / 25 / 50 tools |
-| 🖥️ Terminal Commands | Shell commands the agent ran | 25 / 250 / 1,000 / 5,000 / 25,000 commands |
-| 📦 Packages Installed | Successful package installs (npm, pip, cargo, go, …) | 5 / 25 / 100 / 500 / 1,000 installs |
-| 🔥 Long Sessions | Active agent time in your single longest session | 1 / 5 / 25 / 100 / 500 hours |
-| ⏱️ Coding Time | Total time the agent was working for you (busy until idle or error, at most 6 hours per task) | 5 / 25 / 100 / 500 / 1,000 hours |
-| 🌙 Night Coder | Nights with agent work between 22:00 and 05:00 in your time zone; work after midnight counts for the evening before | 1 / 7 / 30 / 60 / 360 nights |
-| ⚡ Fast Fix | Debugging sessions completed within 10 minutes of agent time | 1 / 5 / 25 / 100 / 500 fixes |
-| 🎯 One-Shot Fix | Debugging sessions completed from a single prompt with no failed task | 1 / 5 / 25 / 100 / 500 fixes |
-| 🏆 Tasks Without Retry | Completed sessions with no retried or failed turn and no error | 5 / 25 / 100 / 500 / 1,000 sessions |
-| 📈 Successful Sessions | Completed sessions that finished idle, changed files and did not end with only failing tests | 5 / 25 / 100 / 500 / 1,000 sessions |
-| 🧹 Code Cleanup | Edits that removed more lines than they added | 5 / 25 / 100 / 500 / 2,500 cleanups |
-| 🗑️ Code Deleted | Lines of code the agent removed | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
-| ➕ Files Created | New files created | 5 / 50 / 250 / 1,000 / 5,000 files |
-| 🗑️ Files Deleted | Files deleted | 5 / 25 / 100 / 500 / 2,500 files |
-| ♻️ Refactors | Completed sessions that set out to refactor or clean up code | 5 / 25 / 100 / 500 / 2,500 sessions |
-| 📊 Projects Managed | Projects opened in BambooKit, whatever their status | 1 / 5 / 10 / 25 / 50 projects |
-| 🌐 Open Source | Open-source projects you work on. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 10 / 25 / 50 projects |
-| ⭐ GitHub Stars Earned | Stars on your GitHub repositories. **Not tracked yet**: needs a GitHub connection | 1 / 10 / 100 / 500 / 1,000 stars |
-| 🤝 Contributions | Contributions to other people's repositories. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 25 / 100 / 500 contributions |
-| 🏅 Pull Requests | Pull requests the agent opened (gh pr create) | 1 / 10 / 50 / 250 / 1,000 pull requests |
-| 🔥 Production Fixes | Debugging sessions that also deployed the fix | 1 / 5 / 25 / 100 / 500 fixes |
-| 📱 Devices Connected | PCs and phones connected to your account | 1 / 2 / 5 / 10 / 25 devices |
-| 🔐 Secure Actions | Permission requests you answered, plus provider API keys you set or removed end-to-end encrypted | 5 / 25 / 100 / 500 / 2,500 actions |
-| 🧑‍💻 Code Reviews | Completed sessions that set out to review or audit code | 5 / 25 / 100 / 500 / 2,500 reviews |
-| 📚 Documentation | Documentation files written or updated (Markdown, docs/ …) | 1 / 10 / 50 / 250 / 1,000 pages |
-| 🧪 Experiments | Completed sessions that set out to experiment or prototype | 5 / 25 / 100 / 500 / 2,500 experiments |
-| 🏎️ Speed Builder | Agent tasks (not sub-agent tasks) completed within 5 minutes | 5 / 25 / 100 / 500 / 1,000 tasks |
-| 👑 BambooKit Master | Other achievements at Bronze or better; this one counts itself once it reaches Bronze. Diamond needs all 50 | 10 / 25 / 35 / 45 / 50 achievements |
+| {ach:coding-streak} Coding Streak | Your longest run of consecutive days (in your time zone) with agent work or a new session | 1 / 7 / 30 / 60 / 360 days |
+| {ach:code-written} Code Written | Lines of code the agent added, from the per-session totals your PC reports | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
+| {ach:code-changes} Code Changes | Every edit the agent made; a file edited three times counts three | 10 / 100 / 1,000 / 5,000 / 10,000 edits |
+| {ach:files-changed} Files Changed | Files created, modified, deleted or renamed; each file counts once per session | 5 / 50 / 250 / 1,000 / 5,000 files |
+| {ach:projects-built} Projects Built | Projects with at least one session that changed a file | 1 / 5 / 10 / 25 / 50 projects |
+| {ach:ai-sessions} AI Sessions | Sessions in which the agent completed at least one task | 5 / 25 / 100 / 500 / 1,000 sessions |
+| {ach:prompts-sent} Prompts Sent | Prompts you sent to the agent | 10 / 100 / 1,000 / 5,000 / 10,000 prompts |
+| {ach:tasks-completed} Tasks Completed | Agent tasks (busy until idle) that finished without an error | 5 / 25 / 100 / 500 / 1,000 tasks |
+| {ach:bugs-fixed} Bugs Fixed | Debugging sessions in which the agent completed work | 5 / 25 / 100 / 500 / 1,000 bugs |
+| {ach:bug-hunter} Bug Hunter | Prompts asking to fix a bug, an error or a crash | 10 / 50 / 250 / 1,000 / 5,000 prompts |
+| {ach:tests-run} Tests Run | Test commands that finished, passed or failed | 10 / 100 / 500 / 2,500 / 10,000 runs |
+| {ach:tests-passed} Tests Passed | Test commands that passed | 10 / 100 / 500 / 2,500 / 10,000 runs |
+| {ach:deployments} Deployments | Successful deploy commands (vercel, netlify, firebase, fly, npm publish, …) | 1 / 5 / 25 / 100 / 500 deploys |
+| {ach:cloud-builder} Cloud Builder | Deployments to hosted platforms (Vercel, Netlify, Firebase, Fly, Cloudflare, Render, package registries, Kubernetes) | 1 / 5 / 20 / 100 / 500 deploys |
+| {ach:commits} Commits | Successful git commits | 10 / 100 / 500 / 2,500 / 10,000 commits |
+| {ach:branches-created} Branches Created | Git branches created | 5 / 25 / 100 / 500 / 2,500 branches |
+| {ach:merges} Merges | Successful git merges | 5 / 25 / 100 / 500 / 2,500 merges |
+| {ach:approvals} Approvals | Permission requests you approved or rejected | 5 / 25 / 100 / 500 / 2,500 approvals |
+| {ach:tool-calls} Tool Calls | Tools the agent called | 25 / 250 / 1,000 / 5,000 / 25,000 calls |
+| {ach:agent-tasks} Agent Tasks | Tasks the agent handed to sub-agents | 5 / 25 / 100 / 500 / 2,500 tasks |
+| {ach:multi-agent} Multi-Agent | Different agents and sub-agents used across your sessions | 2 / 5 / 10 / 25 / 50 agents |
+| {ach:integrations} Integrations | Different MCP servers used (a tool's server is the part of its name before the first underscore) | 1 / 5 / 10 / 25 / 50 servers |
+| {ach:mcp-tools} MCP Tools | Different MCP tools used | 1 / 5 / 10 / 25 / 50 tools |
+| {ach:terminal-commands} Terminal Commands | Shell commands the agent ran | 25 / 250 / 1,000 / 5,000 / 25,000 commands |
+| {ach:packages-installed} Packages Installed | Successful package installs (npm, pip, cargo, go, …) | 5 / 25 / 100 / 500 / 1,000 installs |
+| {ach:long-sessions} Long Sessions | Active agent time in your single longest session | 1 / 5 / 25 / 100 / 500 hours |
+| {ach:coding-time} Coding Time | Total time the agent was working for you (busy until idle or error, at most 6 hours per task) | 5 / 25 / 100 / 500 / 1,000 hours |
+| {ach:night-coder} Night Coder | Nights with agent work between 22:00 and 05:00 in your time zone; work after midnight counts for the evening before | 1 / 7 / 30 / 60 / 360 nights |
+| {ach:fast-fix} Fast Fix | Debugging sessions completed within 10 minutes of agent time | 1 / 5 / 25 / 100 / 500 fixes |
+| {ach:one-shot-fix} One-Shot Fix | Debugging sessions completed from a single prompt with no failed task | 1 / 5 / 25 / 100 / 500 fixes |
+| {ach:tasks-without-retry} Tasks Without Retry | Completed sessions with no retried or failed turn and no error | 5 / 25 / 100 / 500 / 1,000 sessions |
+| {ach:successful-sessions} Successful Sessions | Completed sessions that finished idle, changed files and did not end with only failing tests | 5 / 25 / 100 / 500 / 1,000 sessions |
+| {ach:code-cleanup} Code Cleanup | Edits that removed more lines than they added | 5 / 25 / 100 / 500 / 2,500 cleanups |
+| {ach:code-deleted} Code Deleted | Lines of code the agent removed | 100 / 1,000 / 10,000 / 50,000 / 100,000 lines |
+| {ach:files-created} Files Created | New files created | 5 / 50 / 250 / 1,000 / 5,000 files |
+| {ach:files-deleted} Files Deleted | Files deleted | 5 / 25 / 100 / 500 / 2,500 files |
+| {ach:refactors} Refactors | Completed sessions that set out to refactor or clean up code | 5 / 25 / 100 / 500 / 2,500 sessions |
+| {ach:projects-managed} Projects Managed | Projects opened in BambooKit, whatever their status | 1 / 5 / 10 / 25 / 50 projects |
+| {ach:open-source} Open Source | Open-source projects you work on. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 10 / 25 / 50 projects |
+| {ach:github-stars} GitHub Stars Earned | Stars on your GitHub repositories. **Not tracked yet**: needs a GitHub connection | 1 / 10 / 100 / 500 / 1,000 stars |
+| {ach:contributions} Contributions | Contributions to other people's repositories. **Not tracked yet**: needs a GitHub connection | 1 / 5 / 25 / 100 / 500 contributions |
+| {ach:pull-requests} Pull Requests | Pull requests the agent opened (gh pr create) | 1 / 10 / 50 / 250 / 1,000 pull requests |
+| {ach:production-fixes} Production Fixes | Debugging sessions that also deployed the fix | 1 / 5 / 25 / 100 / 500 fixes |
+| {ach:devices-connected} Devices Connected | PCs and phones connected to your account | 1 / 2 / 5 / 10 / 25 devices |
+| {ach:secure-actions} Secure Actions | Permission requests you answered, plus provider API keys you set or removed end-to-end encrypted | 5 / 25 / 100 / 500 / 2,500 actions |
+| {ach:code-reviews} Code Reviews | Completed sessions that set out to review or audit code | 5 / 25 / 100 / 500 / 2,500 reviews |
+| {ach:documentation} Documentation | Documentation files written or updated (Markdown, docs/ …) | 1 / 10 / 50 / 250 / 1,000 pages |
+| {ach:experiments} Experiments | Completed sessions that set out to experiment or prototype | 5 / 25 / 100 / 500 / 2,500 experiments |
+| {ach:speed-builder} Speed Builder | Agent tasks (not sub-agent tasks) completed within 5 minutes | 5 / 25 / 100 / 500 / 1,000 tasks |
+| {ach:bambookit-master} BambooKit Master | Other achievements at Bronze or better; this one counts itself once it reaches Bronze. Diamond needs all 50 | 10 / 25 / 35 / 45 / 50 achievements |
 
 **Not tracked yet**: Open Source, GitHub Stars Earned and Contributions need a GitHub connection, which is coming later. They appear greyed out with that reason and show no progress. Because **BambooKit Master** reaches Diamond only with all 50 achievements at Bronze or better, its Diamond tier waits for these three; Platinum (45) is reachable today.
 

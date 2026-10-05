@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CodeBlock } from "./CodeBlock";
+import { AchievementBadge } from "@/components/app/AchievementBadge";
 import { withSlash } from "@/lib/format";
 
-/** Inline: `code`, **bold**, [text](href). */
+/** Inline: `code`, **bold**, [text](href), {ach:id} (achievement icon). */
 function inline(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
+  const re = /(\{ach:[a-z0-9-]+\}|`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
@@ -14,7 +15,8 @@ function inline(text: string, keyBase: string): ReactNode[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     const tok = m[0];
     const key = `${keyBase}-${i++}`;
-    if (tok.startsWith("`")) out.push(<code key={key}>{tok.slice(1, -1)}</code>);
+    if (tok.startsWith("{ach:")) out.push(<AchievementBadge key={key} id={tok.slice(5, -1)} state={{ kind: "plain" }} size="sm" className="mr-1.5 -mt-0.5" />);
+    else if (tok.startsWith("`")) out.push(<code key={key}>{tok.slice(1, -1)}</code>);
     else if (tok.startsWith("**")) out.push(<strong key={key} className="text-bk-fg">{tok.slice(2, -2)}</strong>);
     else {
       const [, label, href] = /\[([^\]]+)\]\(([^)]+)\)/.exec(tok)!;

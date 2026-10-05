@@ -23,6 +23,12 @@
   --color-bk-diff-del-fg: #f2b0a8;
   --color-bk-diff-hunk-bg: #1a2226;
   --color-bk-diff-hunk-fg: #8fb4c6;
+  /* Achievement tiers (tuned for the dark ground; light variants below). */
+  --color-bk-tier-bronze: #d68c4c;
+  --color-bk-tier-silver: #c0c7d0;
+  --color-bk-tier-gold: #f2c94c;
+  --color-bk-tier-platinum: #7fd1c7;
+  --color-bk-tier-diamond: #7ab8ff;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 
@@ -44,6 +50,25 @@ body {
 :focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-bk-accent) 70%, transparent);
   outline-offset: 2px;
+}
+
+/* Light variants of the tier tokens, for a light surface ([data-theme="light"] or .bk-light). */
+[data-theme="light"],
+.bk-light {
+  --color-bk-tier-bronze: #a8611f;
+  --color-bk-tier-silver: #7d8794;
+  --color-bk-tier-gold: #b38a12;
+  --color-bk-tier-platinum: #2e9a8d;
+  --color-bk-tier-diamond: #2f7fd9;
+}
+
+/* Diamond achievement badge: gradient ring with a soft glow. */
+.bk-badge-diamond {
+  border-color: transparent;
+  background:
+    linear-gradient(color-mix(in srgb, var(--color-bk-tier-diamond) 14%, var(--color-bk-panel)), color-mix(in srgb, var(--color-bk-tier-diamond) 14%, var(--color-bk-panel))) padding-box,
+    linear-gradient(135deg, var(--color-bk-tier-diamond), var(--color-bk-tier-platinum), var(--color-bk-tier-diamond)) border-box;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-bk-tier-diamond) 35%, transparent);
 }
 
 /* Soft bamboo glow behind the landing hero. */
