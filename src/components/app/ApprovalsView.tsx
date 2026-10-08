@@ -10,14 +10,30 @@ import { useAuth } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { useNow } from "@/lib/live";
 import { fullDate, timeAgo } from "@/lib/format";
-import type { Approval, Question } from "@/lib/types";
+import type { Approval, ApprovalResolver, Question } from "@/lib/types";
 
 export function approvalTone(status: string): "warn" | "ok" | "err" | "neutral" {
   const s = status.toUpperCase();
   if (s === "PENDING" || s === "RESPONDING") return "warn";
-  if (s === "APPROVED") return "ok";
+  if (s === "APPROVED" || s === "ANSWERED") return "ok";
   if (s === "REJECTED") return "err";
   return "neutral";
+}
+
+/** How a resolved request was answered, worded for a sentence ("approved on your PC"). */
+export function resolverLabel(by: ApprovalResolver | null | undefined): string | null {
+  switch (by) {
+    case "phone":
+      return "on your phone";
+    case "web":
+      return "from the web";
+    case "pc":
+      return "on your PC";
+    case "auto":
+      return "automatically";
+    default:
+      return null;
+  }
 }
 
 export function isQuestion(a: Approval): boolean {
@@ -29,8 +45,8 @@ export function approvalStatusLabel(a: Approval): string {
   const s = a.status.toUpperCase();
   if (s === "PENDING") return isQuestion(a) ? "needs an answer" : "waiting";
   if (s === "RESPONDING") return "sending to PC";
-  if (isQuestion(a)) return s === "APPROVED" ? "answered" : s === "REJECTED" ? "dismissed" : s.toLowerCase();
-  if (s === "APPROVED") return a.reply === "always" ? "always allowed" : "approved";
+  if (isQuestion(a)) return s === "APPROVED" || s === "ANSWERED" ? "answered" : s === "REJECTED" ? "dismissed" : s.toLowerCase();
+  if (s === "APPROVED") return a.resolvedBy === "auto" ? "auto-approved" : a.reply === "always" ? "always allowed" : "approved";
   if (s === "REJECTED") return "rejected";
   return s.toLowerCase();
 }
@@ -316,6 +332,14 @@ export function ApprovalItem({
               {a.projectName && <> · {a.projectName}</>}
             </div>
           )}
+          {!pending && a.status.toUpperCase() !== "RESPONDING" && (a.resolvedBy || a.resolvedAt) && (
+            <div className="mt-1 text-xs text-bk-faint">
+              {resolverLabel(a.resolvedBy) ? `Resolved ${resolverLabel(a.resolvedBy)}` : "Resolved"}
+              {a.resolvedAt && (
+                <span title={fullDate(a.resolvedAt)}> · {timeAgo(a.resolvedAt, now)}</span>
+              )}
+            </div>
+          )}
         </div>
         <span className="shrink-0 text-xs text-bk-faint" title={fullDate(a.createdAt)}>
           {timeAgo(a.createdAt, now)}
@@ -370,13 +394,21 @@ async function fetchRespond(path: string, token: string | null, body: unknown): 
   return { data: res?.data ?? null, deviceOnline: res?.deviceOnline };
 }
 
+const TABS = [
+  { value: "pending", label: "Pending", query: "?status=pending" },
+  { value: "resolved", label: "Resolved", query: "?status=resolved" },
+  { value: "all", label: "All", query: "?status=all" },
+] as const;
+
 export function ApprovalsView() {
-  const [tab, setTab] = useState<"pending" | "all">("pending");
-  const approvals = useResource<Approval[]>(tab === "pending" ? "/v1/approvals?status=PENDING" : "/v1/approvals");
+  const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("pending");
+  const approvals = useResource<Approval[]>(`/v1/approvals${TABS.find((t) => t.value === tab)!.query}`);
   const now = useNow();
   useRealtime((e) => {
     if (e.type.startsWith("approval.") || e.type === "notification" || (e.type === "ready" && e.payload?.reconnect)) approvals.reload();
   });
+
+  const emptyTitle = tab === "pending" ? "Nothing waiting for you" : tab === "resolved" ? "No resolved requests yet" : "No requests yet";
 
   return (
     <>
@@ -385,14 +417,14 @@ export function ApprovalsView() {
         description="Permission requests and questions from the agent. Answer them here, in BambooKit on your PC, or on your phone."
       />
       <div className="mb-4 inline-flex rounded-lg border border-bk-line bg-bk-panel p-0.5 text-sm">
-        {(["pending", "all"] as const).map((t) => (
+        {TABS.map((t) => (
           <button
-            key={t}
+            key={t.value}
             type="button"
-            onClick={() => setTab(t)}
-            className={cx("rounded-md px-3 py-1.5", tab === t ? "bg-bk-raised text-bk-fg" : "text-bk-muted hover:text-bk-fg")}
+            onClick={() => setTab(t.value)}
+            className={cx("rounded-md px-3 py-1.5", tab === t.value ? "bg-bk-raised text-bk-fg" : "text-bk-muted hover:text-bk-fg")}
           >
-            {t === "pending" ? "Waiting" : "Recent"}
+            {t.label}
           </button>
         ))}
       </div>
@@ -401,9 +433,10 @@ export function ApprovalsView() {
       ) : !approvals.data ? (
         <LoadingState slow={approvals.slow} />
       ) : approvals.data.length === 0 ? (
-        <EmptyState icon={<ShieldCheck className="size-7" />} title={tab === "pending" ? "Nothing waiting for you" : "No requests yet"}>
-          Requests appear here when the agent asks before running a command or editing a file, or when it has a question for you. You can approve, reject or
-          answer them from this page.
+        <EmptyState icon={<ShieldCheck className="size-7" />} title={emptyTitle}>
+          {tab === "resolved"
+            ? "Requests you have approved, rejected or answered appear here, including the ones your PC approved automatically. Resolved requests are kept for 30 days."
+            : "Requests appear here when the agent asks before running a command or editing a file, or when it has a question for you. You can approve, reject or answer them from this page."}
         </EmptyState>
       ) : (
         <ul className="divide-y divide-bk-line overflow-hidden rounded-xl border border-bk-line bg-bk-panel">

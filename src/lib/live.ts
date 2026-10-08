@@ -21,8 +21,16 @@ export function useLiveDevices() {
   useRealtime((e) => {
     const p = e.payload;
     switch (e.type) {
-      case "device.status":
       case "device.updated":
+        // The PC's reported settings changed: `{deviceId, settings}` (no id/kind). Merge them in place.
+        if (p?.settings !== undefined && !p?.kind) {
+          const id = p?.id ?? p?.deviceId ?? e.deviceId;
+          if (id) setData((list) => list?.map((d) => (d.id === id ? { ...d, settings: { ...d.settings, ...p.settings } } : d)));
+          else reload();
+          break;
+        }
+      // falls through to the full-device upsert when a complete device is sent
+      case "device.status":
       case "device.registered":
         if (p?.id && p?.kind) setData((list) => upsert(list, p as Device));
         else reload();

@@ -209,6 +209,7 @@ export function ProfileStats({ now }: { now: number }) {
             <Tile label="Files modified" value={n(s.code.filesModified)} />
             <Tile label="Files deleted" value={n(s.code.filesDeleted)} />
             <Tile label="Files renamed" value={n(s.code.filesRenamed)} />
+            {s.filesChanged24h !== undefined && <Tile label="Files changed (24h)" value={n(s.filesChanged24h)} sub="last 24 hours" />}
             <Tile label="Lines added" value={`+${n(s.code.linesAdded)}`} tone={s.code.linesAdded ? "ok" : undefined} />
             <Tile label="Lines deleted" value={`−${n(s.code.linesDeleted)}`} tone={s.code.linesDeleted ? "err" : undefined} />
             <Tile label="Edits" value={n(s.code.edits)} />

@@ -9,6 +9,19 @@ export interface LinkedDevice {
   platform: string | null;
 }
 
+/** How a PC handles the agent's permission requests (desktop capability `approval-modes`). */
+export type ApprovalMode = "ask" | "edits" | "all";
+
+/** Settings a PC reports to the cloud (desktops only; fields present only when the PC supports them). */
+export interface DeviceSettings {
+  /** 'ask' asks for everything, 'edits' auto-approves file edits, 'all' auto-approves edits and commands. */
+  approvalMode?: ApprovalMode;
+  /** Whether the PC is being kept awake (its ☕ button). */
+  keepAwake?: boolean;
+  /** Developer option on the PC. The website only shows this state, read only. */
+  allowRemoteControl?: boolean;
+}
+
 export interface Device {
   id: string;
   kind: DeviceKind;
@@ -23,6 +36,8 @@ export interface Device {
   protocol?: number | null;
   /** What this desktop can do, e.g. "relay.history" (desktops only; older APIs omit it). */
   capabilities?: string[] | null;
+  /** PC settings reported to the cloud (desktops only; older APIs omit it). */
+  settings?: DeviceSettings | null;
 }
 
 export type SessionStatus = "idle" | "busy" | "retry" | "error";
@@ -103,6 +118,9 @@ export interface Question {
 
 export type ApprovalKind = "permission" | "question";
 
+/** Where a resolved request was answered (missing on older servers). */
+export type ApprovalResolver = "phone" | "web" | "pc" | "auto";
+
 export interface Approval {
   id: string;
   deviceId?: string;
@@ -112,6 +130,7 @@ export interface Approval {
   permission: string;
   title: string;
   patterns: string[];
+  /** PENDING, RESPONDING, APPROVED, REJECTED, ANSWERED, EXPIRED. */
   status: string;
   reply?: string | null;
   /** Missing on older servers: treat as "permission". */
@@ -121,6 +140,8 @@ export interface Approval {
   answers?: string[][] | null;
   createdAt: string;
   resolvedAt?: string | null;
+  /** Who resolved it: 'phone' | 'web' | 'pc' | 'auto' (missing on older servers or while pending). */
+  resolvedBy?: ApprovalResolver | null;
 }
 
 /** A notification as sent in the realtime 'notification' event. */
@@ -374,6 +395,8 @@ export interface ProfileStats {
   projects: { total: number; active: number; completed: number; archived: number; list: ProjectStat[] };
   sessions: { total: number; withCompletedWork: number };
   tasks: { total: number; completed: number; failed: number; debugging: number };
+  /** Distinct files changed in sessions active in the last 24 h (missing on older APIs). */
+  filesChanged24h?: number;
   codingTime: { totalMs: number; thisWeekMs: number; thisMonthMs: number; nightMs: number; longestMs: number };
   code: CodeStats;
   rules: { codingTime: string; files: string; nightHours: string };
