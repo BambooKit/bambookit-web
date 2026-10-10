@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CircleCheck, Lock, Plus, X } from "lucide-react";
 import { Button, Card, Notice, Spinner, cx } from "@/components/ui";
 import { InlineError } from "@/components/ErrorInfo";
@@ -26,17 +26,47 @@ export function NewSessionButton({ open, onToggle }: { open: boolean; onToggle: 
   );
 }
 
+interface SeedModel {
+  providerID: string;
+  modelID: string;
+}
+
 /**
  * Starts a session on the PC that owns a project (POST /v1/projects/:id/sessions). New sessions from
  * the website count toward the free daily allowance like the phone's.
+ *
+ * Reused by the "Open in my BambooKit" clone flow: pass `seedText` (and optionally `seedModel`) to
+ * prefill the first message, `intro`/`heading` to explain the panel, and `onCreated` to route to the
+ * new session on success instead of showing the in-place "started" notice.
  */
-export function NewSessionPanel({ onClose, defaultProjectId, desktops }: { onClose: () => void; defaultProjectId?: string; desktops: Device[] }) {
+export function NewSessionPanel({
+  onClose,
+  defaultProjectId,
+  desktops,
+  seedText,
+  seedModel,
+  intro,
+  heading = "New session",
+  submitLabel = "Start session",
+  onCreated,
+}: {
+  onClose: () => void;
+  defaultProjectId?: string;
+  desktops: Device[];
+  seedText?: string;
+  seedModel?: SeedModel | null;
+  intro?: ReactNode;
+  heading?: string;
+  submitLabel?: string;
+  onCreated?: (result: { id: string | null }) => void;
+}) {
   const { getToken } = useAuth();
   const { plan, bump, applyLimit } = usePlan();
   const quota = useFreeQuota("sessions");
   const projects = useResource<Project[]>("/v1/projects");
   const [projectId, setProjectId] = useState(defaultProjectId ?? "");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(seedText ?? "");
+  const [useModel, setUseModel] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [limitResetsAt, setLimitResetsAt] = useState<string | null>(null);
@@ -59,10 +89,19 @@ export function NewSessionPanel({ onClose, defaultProjectId, desktops }: { onClo
     setSending(true);
     setError(null);
     try {
-      const res = await apiRequestFull<{ deviceOnline?: boolean } | null>("POST", `/v1/projects/${encodeURIComponent(project.id)}/sessions`, await getToken(), {
-        body: { text: trimmed },
-      });
+      const body: { text: string; model?: SeedModel } = { text: trimmed };
+      if (seedModel && useModel) body.model = seedModel;
+      const res = await apiRequestFull<{ data?: { id?: string | null } | null; deviceOnline?: boolean } | null>(
+        "POST",
+        `/v1/projects/${encodeURIComponent(project.id)}/sessions`,
+        await getToken(),
+        { body },
+      );
       bump("sessions");
+      if (onCreated) {
+        onCreated({ id: res?.data?.id ?? null });
+        return;
+      }
       setText("");
       setStarted({ pc: project.deviceName ?? "Your PC", queued: res?.deviceOnline === false });
     } catch (err) {
@@ -78,12 +117,14 @@ export function NewSessionPanel({ onClose, defaultProjectId, desktops }: { onClo
     <Card className="mb-5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-medium text-bk-fg">
-          {locked ? <Lock className="size-4 text-bk-warn" /> : <Plus className="size-4" />} New session
+          {locked ? <Lock className="size-4 text-bk-warn" /> : <Plus className="size-4" />} {heading}
         </h2>
         <Button variant="ghost" className="px-2 py-1 text-xs" onClick={onClose} aria-label="Close">
           <X className="size-3.5" />
         </Button>
       </div>
+
+      {intro && <div className="mb-3 text-sm text-bk-muted">{intro}</div>}
 
       {started && (
         <Notice tone="ok" className="mb-3" icon={<CircleCheck className="size-4" />}>
@@ -148,6 +189,12 @@ export function NewSessionPanel({ onClose, defaultProjectId, desktops }: { onClo
                   )}
                 />
               </label>
+              {seedModel && (
+                <label className="flex items-center gap-2 text-xs text-bk-muted">
+                  <input type="checkbox" checked={useModel} onChange={(e) => setUseModel(e.target.checked)} className="accent-bk-accent" />
+                  Use the shared session&apos;s model (<span className="font-mono">{seedModel.modelID}</span>)
+                </label>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs text-bk-faint">
                   {tooLong
@@ -159,7 +206,7 @@ export function NewSessionPanel({ onClose, defaultProjectId, desktops }: { onClo
                 <div className="flex items-center gap-3">
                   <QuotaNote metric="sessions" />
                   <Button type="submit" variant="primary" className="px-3 py-1.5 text-xs" disabled={!project || !trimmed || tooLong || sending}>
-                    {sending ? <Spinner className="size-3.5" /> : <Plus className="size-3.5" />} Start session
+                    {sending ? <Spinner className="size-3.5" /> : <Plus className="size-3.5" />} {submitLabel}
                   </Button>
                 </div>
               </div>

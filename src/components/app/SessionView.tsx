@@ -6,6 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ArrowLeft, Brain, ChevronRight, Check, CircleCheck, Clock, FileDiff, FileMinus, FilePlus2, FolderGit2, Laptop, MessagesSquare, Pencil, RefreshCw, ShieldAlert, TriangleAlert, WifiOff, Wrench, X } from "lucide-react";
 import { RichText } from "./RichText";
 import { Composer } from "./Composer";
+import { Collaborators } from "./Collaborators";
 import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
 import { ErrorInfo, InlineError } from "@/components/ErrorInfo";
 import { ApprovalItem } from "./ApprovalsView";
@@ -93,6 +94,17 @@ function groupMessages(parts: Part[]): Message[] {
   return out;
 }
 
+/** The display name of a message's author, when the API recorded one (e.g. a collaborator). */
+function authorName(parts: Part[]): string | null {
+  for (const p of parts) {
+    const a = p.author;
+    if (!a) continue;
+    if (typeof a === "string") return a.trim() || null;
+    return (a.name?.trim() || a.email?.trim()) ?? null;
+  }
+  return null;
+}
+
 function Transcript({ parts }: { parts: Part[] }) {
   const messages = useMemo(() => groupMessages(parts), [parts]);
   return (
@@ -101,8 +113,10 @@ function Transcript({ parts }: { parts: Part[] }) {
         const visible = m.parts.filter((p) => p.type === "tool" || (p.text ?? "").trim());
         if (!visible.length) return null;
         if (m.role === "user") {
+          const author = authorName(m.parts);
           return (
-            <div key={m.id} className="flex justify-end">
+            <div key={m.id} className="flex flex-col items-end">
+              {author && <span className="mb-1 pr-1 text-[11px] text-bk-faint">from {author}</span>}
               <div className="max-w-[92%] rounded-2xl rounded-br-md border border-bk-line bg-bk-raised px-4 py-2.5 text-bk-fg sm:max-w-[80%]">
                 {visible.map((p) => (p.type === "tool" ? <ToolRow key={p.id} part={p} /> : <RichText key={p.id} text={p.text ?? ""} />))}
               </div>
@@ -305,7 +319,7 @@ const RENAME_TIMEOUT_MS = 30_000;
  * The session title with a Rename action. The PC renames the session (RENAME_SESSION); the new
  * title arrives as session.updated, so "Renaming on your PC…" stays until the title changes.
  */
-function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnline: boolean; pcName: string }) {
+function SessionTitle({ session, pcOnline, pcName, canRename }: { session: Session; pcOnline: boolean; pcName: string; canRename: boolean }) {
   const { getToken } = useAuth();
   const title = session.title || "";
   const [editing, setEditing] = useState(false);
@@ -354,6 +368,10 @@ function SessionTitle({ session, pcOnline, pcName }: { session: Session; pcOnlin
       setSending(false);
     }
   };
+
+  if (!canRename) {
+    return <h1 className="min-w-0 break-words text-xl font-semibold tracking-tight sm:text-2xl">{title || "Untitled session"}</h1>;
+  }
 
   if (editing) {
     return (
@@ -470,7 +488,9 @@ export function SessionView() {
   const changes = useResource<ChangedFile[]>(enc ? `/v1/sessions/${enc}/changes` : null);
   const history = useResource<SessionHistoryResponse>(enc ? `/v1/sessions/${enc}/history` : null);
   const devices = useLiveDevices();
-  const waiting = useResource<Approval[]>(enc ? `/v1/approvals?status=PENDING&sessionId=${enc}` : null);
+  // Answering approvals is owner-only; don't fetch them once we know the viewer is a collaborator.
+  const ownerView = (session.data?.role ?? "owner") === "owner";
+  const waiting = useResource<Approval[]>(enc && ownerView ? `/v1/approvals?status=PENDING&sessionId=${enc}` : null);
   const [removed, setRemoved] = useState(false);
   const initialTab = params.get("tab") as Tab | null;
   const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) ? initialTab : "summary");
@@ -536,6 +556,7 @@ export function SessionView() {
     const sid = e.sessionId ?? e.payload?.sessionId;
     const mine = sid === id || e.payload?.id === id;
     if (mine && affectsHistory(e.type, e.payload)) scheduleHistory();
+    if (e.type === "collaborators.updated" && sid === id) session.reload();
     if (e.type.startsWith("approval.") || e.type === "notification" || (e.type === "ready" && e.payload?.reconnect)) waiting.reload();
     switch (e.type) {
       case "session.updated":
@@ -594,6 +615,7 @@ export function SessionView() {
   if (!session.data) return <LoadingState slow={session.slow} label="Loading session…" />;
 
   const s = session.data;
+  const isOwner = (s.role ?? "owner") === "owner";
   const isLive = live === "live" && pcOnline;
   const h = history.data?.history;
   const counts: Partial<Record<Tab, number>> = h
@@ -614,8 +636,9 @@ export function SessionView() {
       <div className="mb-5">
         <div className="flex flex-wrap items-center gap-2.5">
           <LikeButton session={s} onChange={(starred, server) => session.setData((cur) => (cur ? { ...cur, ...(server ?? {}), starred } : cur))} className="-ml-1.5" />
-          <SessionTitle session={s} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />
+          <SessionTitle session={s} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} canRename={isOwner} />
           <StatusBadge status={s.status} />
+          <Collaborators session={s} sessionId={id} />
           <span className={cx("inline-flex items-center gap-1.5 text-xs", isLive ? "text-bk-ok" : "text-bk-faint")} title={isLive ? "Receiving live updates from your PC" : "Not live"}>
             <OnlineDot online={isLive} /> {isLive ? "Live" : "Not live"}
           </span>
@@ -648,10 +671,18 @@ export function SessionView() {
         {s.directory && <div className="mt-1.5 truncate font-mono text-xs text-bk-faint" title={s.directory}>{s.directory}</div>}
       </div>
 
-      <div id="waiting-requests">
-        <WaitingRequests approvals={waiting} now={now} />
-      </div>
-      {!removed && <ContinueOnPc sessionId={s.id} remote={!!s.remote} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />}
+      {isOwner && (
+        <div id="waiting-requests">
+          <WaitingRequests approvals={waiting} now={now} />
+        </div>
+      )}
+      {!removed && isOwner && <ContinueOnPc sessionId={s.id} remote={!!s.remote} pcOnline={pcOnline} pcName={pc?.name ?? "Your PC"} />}
+      {!isOwner && s.owner && (
+        <Notice tone="neutral" className="mb-4" icon={<Laptop className="size-4" />}>
+          Shared with you by {s.owner.name || s.owner.email || "the owner"}. It runs on their PC.
+          {s.role === "viewer" ? " You can follow along live." : " You can follow along live and chat in it."}
+        </Notice>
+      )}
 
       {removed && (
         <Notice tone="warn" className="mb-4">

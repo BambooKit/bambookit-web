@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Brain, ChevronRight, Wrench } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { RichText } from "@/components/app/RichText";
+import { ShareImport } from "./ShareImport";
 import { ErrorState, LoadingState, cx } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { API_URL, CLIENT_HEADER } from "@/lib/config";
@@ -133,10 +134,12 @@ function Transcript({ items }: { items: Item[] }) {
 
 export function ShareView() {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [shareId, setShareId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const id = shareIdFromLocation();
+    setShareId(id);
     if (!id) {
       setState({ kind: "missing" });
       return;
@@ -176,7 +179,12 @@ export function ShareView() {
         {state.kind === "error" && (
           <ErrorState title="Couldn't load this shared session" error={state.error} onRetry={() => setTick((t) => t + 1)} />
         )}
-        {state.kind === "ok" && <Transcript items={state.items} />}
+        {state.kind === "ok" && (
+          <>
+            {shareId && <ShareImport shareId={shareId} />}
+            <Transcript items={state.items} />
+          </>
+        )}
       </main>
       <SiteFooter />
     </>

@@ -42,6 +42,17 @@ export interface Device {
 
 export type SessionStatus = "idle" | "busy" | "retry" | "error";
 
+/** The signed-in user's relationship to a session. Missing on older servers → treat as "owner". */
+export type SessionRole = "owner" | "chat" | "viewer";
+
+/** The account that owns a session (missing on older servers). */
+export interface SessionOwner {
+  userId: string;
+  email: string | null;
+  name: string | null;
+  avatar: string | null;
+}
+
 export interface Session {
   id: string;
   deviceId: string;
@@ -61,8 +72,35 @@ export interface Session {
   pendingApprovals: number;
   /** Liked (kept by BambooKit only). Missing on older servers. */
   starred?: boolean;
+  /** The session's owner account (missing on older servers). */
+  owner?: SessionOwner | null;
+  /** The signed-in user's role on this session (missing on older servers → "owner"). */
+  role?: SessionRole;
+  /** How many collaborators have been invited (missing on older servers). */
+  collaboratorCount?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A sender tagged on a chat part (missing unless the API recorded the author). */
+export type PartAuthor = { name?: string | null; email?: string | null } | string;
+
+/** GET /v1/sessions/:id/collaborators */
+export interface SessionCollaborator {
+  userId: string | null;
+  email: string;
+  name: string | null;
+  avatar: string | null;
+  role: "chat" | "viewer";
+  /** Invited by email but not yet linked to an account. */
+  pending: boolean;
+  /** True for the signed-in viewer's own row. */
+  you: boolean;
+}
+
+export interface CollaboratorsResponse {
+  owner: SessionOwner;
+  collaborators: SessionCollaborator[];
 }
 
 /** GET /v1/projects */
@@ -91,6 +129,8 @@ export interface Part {
   toolStatus: string | null;
   toolTitle: string | null;
   sortKey: string;
+  /** Who sent a user message, when the API recorded it (e.g. a collaborator). */
+  author?: PartAuthor | null;
   updatedAt: string;
 }
 

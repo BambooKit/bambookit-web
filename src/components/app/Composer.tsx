@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CircleCheck, Laptop, Lock, SendHorizontal } from "lucide-react";
+import { CircleCheck, Eye, Laptop, Lock, SendHorizontal } from "lucide-react";
 import { Button, Spinner, cx } from "@/components/ui";
 import { InlineError } from "@/components/ErrorInfo";
 import { LimitReached, QuotaNote, useFreeQuota } from "./PlanLimits";
@@ -27,7 +27,21 @@ export function Composer({ session, pcName }: { session: Session; pcName: string
   const [queued, setQueued] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
 
-  if (!session.remote) {
+  const role = session.role ?? "owner";
+
+  // Viewers are read-only; the owner can grant chat access.
+  if (role === "viewer") {
+    return (
+      <div className="flex items-start gap-2 border-t border-bk-line bg-bk-bg/40 px-4 py-3 text-xs text-bk-muted">
+        <Eye className="mt-0.5 size-3.5 shrink-0 text-bk-faint" />
+        <span>View only — ask the owner for chat access.</span>
+      </div>
+    );
+  }
+
+  // The owner must continue the session on their PC once before it can be chatted in remotely.
+  // Chat collaborators can't do that themselves, so the composer stays available for them.
+  if (role === "owner" && !session.remote) {
     return (
       <div className="flex items-start gap-2 border-t border-bk-line bg-bk-bg/40 px-4 py-3 text-xs text-bk-muted">
         <Laptop className="mt-0.5 size-3.5 shrink-0 text-bk-faint" />

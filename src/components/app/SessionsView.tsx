@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, FolderGit2, Heart, Monitor, Search, ShieldAlert, Sparkles, X } from "lucide-react";
+import { ChevronRight, FolderGit2, Heart, Monitor, Search, ShieldAlert, Sparkles, Users, X } from "lucide-react";
 import { LikeButton } from "./LikeButton";
 import { NewSessionButton, NewSessionPanel } from "./NewSession";
 import { ButtonLink, Changes, EmptyState, ErrorState, LoadingState, OnlineDot, PageHeader, Pill, StatusBadge, cx } from "@/components/ui";
@@ -65,6 +65,7 @@ function PcList({ desktops, sessions, selected, onSelect, now }: { desktops: Dev
 
 function SessionRow({ s, pc, now, onStarred }: { s: Session; pc: Device | undefined; now: number; onStarred: (starred: boolean, server?: Session) => void }) {
   const detail = s.status === "error" || s.status === "retry" ? s.statusMessage : s.status === "busy" ? s.currentAction : null;
+  const shared = s.role && s.role !== "owner";
   return (
     <li className="flex items-start gap-1 pl-2 transition-colors hover:bg-bk-raised/50 sm:items-center">
       <LikeButton session={s} onChange={onStarred} className="mt-3 sm:mt-0" />
@@ -73,6 +74,11 @@ function SessionRow({ s, pc, now, onStarred }: { s: Session; pc: Device | undefi
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="truncate font-medium text-bk-fg">{s.title || "Untitled session"}</span>
             <StatusBadge status={s.status} />
+            {shared && (
+              <Pill>
+                <Users className="size-3" /> Shared · {s.role === "chat" ? "Can chat" : "View only"}
+              </Pill>
+            )}
             {s.pendingApprovals > 0 && (
               <Pill tone="warn">
                 <ShieldAlert className="size-3" /> {plural(s.pendingApprovals, "approval")}
@@ -80,6 +86,7 @@ function SessionRow({ s, pc, now, onStarred }: { s: Session; pc: Device | undefi
             )}
           </div>
           <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-bk-faint">
+            {shared && s.owner && <span className="truncate">by {s.owner.name || s.owner.email}</span>}
             {s.projectName && <span className="truncate text-bk-muted">{s.projectName}</span>}
             {pc && (
               <span className="inline-flex items-center gap-1">
