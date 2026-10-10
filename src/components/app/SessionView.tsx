@@ -11,6 +11,7 @@ import { ErrorInfo, InlineError } from "@/components/ErrorInfo";
 import { ApprovalItem } from "./ApprovalsView";
 import { LikeButton } from "./LikeButton";
 import { ChangesTab, FilesTab, HistoryGate, PromptsTab, SourceBadge, SummaryTab, TimelineTab, agentLabel, touchedFiles } from "./SessionHistory";
+import { SessionMap } from "./SessionMap";
 import { Button, ButtonLink, Card, Changes, EmptyState, ErrorState, LoadingState, Notice, OnlineDot, Pill, Spinner, StatusBadge, cx } from "@/components/ui";
 import { ApiError, apiRequestFull, useResource, type Resource } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -239,9 +240,9 @@ function ChangesPanel({ changes, onOpen }: { changes: Resource<ChangedFile[]>; o
   );
 }
 
-const TABS = ["summary", "prompts", "timeline", "changes", "files", "chat"] as const;
+const TABS = ["summary", "map", "prompts", "timeline", "changes", "files", "chat"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = { summary: "Summary", prompts: "Prompts", timeline: "Timeline", changes: "Changes", files: "Files", chat: "Chat" };
+const TAB_LABEL: Record<Tab, string> = { summary: "Summary", map: "Map", prompts: "Prompts", timeline: "Timeline", changes: "Changes", files: "Files", chat: "Chat" };
 
 /** Session events that change the history; streaming text is excluded (the final status update covers it). */
 function affectsHistory(type: string, payload: any): boolean {
@@ -459,6 +460,7 @@ function WaitingRequests({ approvals, now }: { approvals: Resource<Approval[]>; 
 
 export function SessionView() {
   const params = useSearchParams();
+  const { user } = useAuth();
   const id = params.get("id");
   const now = useNow();
   const live = useLiveState();
@@ -684,7 +686,17 @@ export function SessionView() {
       </div>
 
       <div role="tabpanel" aria-label={TAB_LABEL[tab]}>
-        {tab === "chat" ? (
+        {tab === "map" ? (
+          <SessionMap
+            session={s}
+            pcName={pc?.name ?? "Your PC"}
+            pcOnline={pcOnline}
+            isLive={isLive}
+            changes={changes.data}
+            history={h ?? undefined}
+            accountLabel={user?.name || user?.email || "You"}
+          />
+        ) : tab === "chat" ? (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <ChatPanel parts={parts} session={s} pcName={pc?.name ?? "your PC"} />
             <ChangesPanel changes={changes} onOpen={openChange} />

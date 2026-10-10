@@ -29,6 +29,21 @@
   --color-bk-tier-gold: #f2c94c;
   --color-bk-tier-platinum: #7fd1c7;
   --color-bk-tier-diamond: #7ab8ff;
+  /* Roadmap.sh-style map: rounded nodes, a solid spine and dashed branches.
+     Yellow-family primary; reuse bk-ok for a done check. Light variants below. */
+  --color-bk-rm-primary-bg: #f2d24a;
+  --color-bk-rm-primary-border: #8a7312;
+  --color-bk-rm-primary-fg: #1c1702;
+  --color-bk-rm-secondary-bg: #ece1c0;
+  --color-bk-rm-secondary-border: #8c8252;
+  --color-bk-rm-secondary-fg: #241f0d;
+  --color-bk-rm-neutral-bg: #1f221d;
+  --color-bk-rm-neutral-border: #2a2e27;
+  --color-bk-rm-neutral-fg: #e5edd5;
+  --color-bk-rm-line: #525a4a;
+  --color-bk-rm-done: #9fd39a;
+  --color-bk-rm-progress: #e6b84a;
+  --color-bk-rm-todo: #6e7767;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
 }
 
@@ -60,6 +75,20 @@ body {
   --color-bk-tier-gold: #b38a12;
   --color-bk-tier-platinum: #2e9a8d;
   --color-bk-tier-diamond: #2f7fd9;
+  /* Roadmap tokens on a light surface. */
+  --color-bk-rm-primary-bg: #ffe08a;
+  --color-bk-rm-primary-border: #8a6d00;
+  --color-bk-rm-primary-fg: #3a2f00;
+  --color-bk-rm-secondary-bg: #f3ead0;
+  --color-bk-rm-secondary-border: #b0a46c;
+  --color-bk-rm-secondary-fg: #40391c;
+  --color-bk-rm-neutral-bg: #f5f6f2;
+  --color-bk-rm-neutral-border: #d8ddd0;
+  --color-bk-rm-neutral-fg: #2a2e27;
+  --color-bk-rm-line: #b2b8a8;
+  --color-bk-rm-done: #4f9a4a;
+  --color-bk-rm-progress: #c58a00;
+  --color-bk-rm-todo: #9aa38e;
 }
 
 /* Diamond achievement badge: gradient ring with a soft glow. */
