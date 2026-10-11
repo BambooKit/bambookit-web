@@ -114,12 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    const fb = getFirebase();
-    if (!fb) throw new Error("Google sign-in is not available on this site.");
-    const { auth, mod } = await fb;
-    // One account at a time: leave any email session first.
-    await getSupabase()?.auth.signOut();
-    await mod.signInWithPopup(auth, new mod.GoogleAuthProvider());
+    // Google via Supabase OAuth (same account system as email and the phone) — redirects to Google
+    // and back to the site. Requires the Google provider enabled in Supabase.
+    const client = getSupabase();
+    if (!client) throw new Error("Sign-in is not available on this site.");
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/signin/` : undefined;
+    const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
@@ -130,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthValue>(
-    () => ({ status, user, emailEnabled: !!SUPABASE, googleEnabled: !!FIREBASE, recovery, supabase, getToken, signInWithGoogle, signOut }),
+    () => ({ status, user, emailEnabled: !!SUPABASE, googleEnabled: !!SUPABASE, recovery, supabase, getToken, signInWithGoogle, signOut }),
     [status, user, recovery, supabase, getToken, signInWithGoogle, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
