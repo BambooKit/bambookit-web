@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, Terminal } from "lucide-react";
+import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Laptop, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, Terminal } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { CodeBlock } from "@/components/site/CodeBlock";
 import { DownloadButton, LatestReleases } from "@/components/Releases";
 import { HAS_SCREENSHOTS, Screenshots } from "@/components/site/Screenshots";
-import { INSTALL_COMMAND, LINKS } from "@/lib/config";
+import { INSTALL_COMMAND, LINKS, MAC_INSTALL_COMMAND } from "@/lib/config";
 
 const PRODUCTS = [
   {
     icon: Monitor,
     name: "BambooKit Desktop",
-    tag: "Windows",
+    tag: "Windows and macOS",
     body: "A full AI coding workspace on your PC. Chat with agents that edit files, run commands and tests, and use Git, MCP servers and tools. Every change is shown as a diff you can review or revert.",
     points: ["Free BambooKit models included", "Or bring your own OpenAI, Anthropic, Google, OpenRouter or Ollama keys", "Sessions and chats stored on your PC"],
   },
@@ -25,7 +25,7 @@ const PRODUCTS = [
 ];
 
 const STEPS = [
-  { icon: Terminal, title: "Install and sign in", body: "Download the Windows installer (or run the one-line installer) and sign in to BambooKit Desktop with your account." },
+  { icon: Terminal, title: "Install and sign in", body: "Download BambooKit Desktop for Windows or macOS (or run the one-line installer) and sign in with your account." },
   { icon: Sparkles, title: "Work with the agent", body: "Open a project folder and start a session. The agent edits, runs and tests while you review every change." },
   { icon: QrCode, title: "Pair your phone", body: "In Desktop choose BambooKit → Add mobile device and scan the QR code with the Android app." },
 ];
@@ -50,6 +50,22 @@ const WINDOWS_STEPS: ReactNode[] = [
   <>
     Optional: the <span className="text-bk-fg">☕ keep-awake</span> button next to the update button keeps the PC awake while agents run, until you click it
     again or close the window.
+  </>,
+];
+
+const MAC_STEPS: ReactNode[] = [
+  <>Run the Terminal line above. It picks the Apple Silicon or Intel build, installs BambooKit in Applications and opens it.</>,
+  <>
+    Or download the DMG (Apple Silicon, or Intel for older Macs), open it and drag <span className="text-bk-fg">BambooKit</span> to{" "}
+    <span className="text-bk-fg">Applications</span>.
+  </>,
+  <>
+    BambooKit is not notarized by Apple yet, so the first time you open a downloaded copy, right-click it in Applications and choose{" "}
+    <span className="text-bk-fg">Open → Open</span>. The one-line installer does this for you.
+  </>,
+  <>Sign in, or create an account.</>,
+  <>
+    Choose <span className="text-bk-fg">Add project</span>, pick a project folder and start a session.
   </>,
 ];
 
@@ -132,7 +148,7 @@ export default function Home() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-2 rounded-full border border-bk-line bg-bk-panel px-3 py-1 text-xs text-bk-muted">
-                <span className="size-1.5 rounded-full bg-bk-ok" /> Windows desktop app · Android remote
+                <span className="size-1.5 rounded-full bg-bk-ok" /> Windows and macOS desktop app · Android remote
               </span>
               <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 AI coding on your PC.
@@ -140,11 +156,12 @@ export default function Home() {
                 <span className="text-bk-muted">Follow it from anywhere.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-bk-muted">
-                BambooKit is an AI coding agent for Windows with your phone as the remote. The agent works on your project on your PC, your sessions stay
+                BambooKit is an AI coding agent for Windows and macOS with your phone as the remote. The agent works on your project on your PC, your sessions stay
                 there, and you can check in, review changes and answer its questions from your phone.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <DownloadButton platform="windows" />
+                <DownloadButton platform="mac" intel={false} />
                 <DownloadButton platform="android" label="Download for Android" primary={false} />
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
@@ -222,9 +239,10 @@ export default function Home() {
         <section id="install" className="scroll-mt-20 border-y border-bk-line bg-bk-panel/40">
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Download and install</h2>
-            <p className="mt-2 max-w-2xl text-bk-muted">Install BambooKit Desktop on your PC first, then the Android app on your phone. Both are free.</p>
+            <p className="mt-2 max-w-2xl text-bk-muted">Install BambooKit Desktop on your Windows PC or Mac first, then the Android app on your phone. Both are free.</p>
             <p className="mt-3 text-sm text-bk-faint">
-              System requirements: <span className="text-bk-muted">Windows 10 or 11, 64-bit</span> · <span className="text-bk-muted">Android 8.0 or newer</span> · an
+              System requirements: <span className="text-bk-muted">Windows 10 or 11, 64-bit</span> ·{" "}
+              <span className="text-bk-muted">macOS 11 Big Sur or later (Apple Silicon or Intel)</span> · <span className="text-bk-muted">Android 8.0 or newer</span> · an
               internet connection on both.
             </p>
           </div>
@@ -247,6 +265,28 @@ export default function Home() {
                 . Prefer to build it yourself? See{" "}
                 <Link href="/docs/install/#from-source" className="underline underline-offset-2 hover:text-bk-fg">
                   install from source
+                </Link>
+                .
+              </p>
+            </div>
+            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+              <h3 className="flex items-center gap-2 text-lg font-medium">
+                <Laptop className="size-5 text-bk-muted" /> macOS
+              </h3>
+              <div className="mt-4">
+                <DownloadButton platform="mac" label="Download BambooKit .dmg" />
+              </div>
+              <p className="mt-4 text-sm text-bk-muted">Or open Terminal and run:</p>
+              <CodeBlock code={MAC_INSTALL_COMMAND} />
+              <InstallSteps steps={MAC_STEPS} />
+              <p className="mt-4 text-xs text-bk-faint">
+                All versions are on the{" "}
+                <a href={LINKS.macReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                  macOS releases page
+                </a>
+                . Uninstall and other details are in the{" "}
+                <Link href="/docs/install/#macos" className="underline underline-offset-2 hover:text-bk-fg">
+                  install guide
                 </Link>
                 .
               </p>

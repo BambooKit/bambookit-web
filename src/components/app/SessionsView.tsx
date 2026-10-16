@@ -191,7 +191,7 @@ export function SessionsView() {
             </ButtonLink>
           }
         >
-          Install BambooKit Desktop on your Windows PC and sign in with this account. Its sessions will appear here.
+          Install BambooKit Desktop on your Windows PC or Mac and sign in with this account. Its sessions will appear here.
         </EmptyState>
       </>
     );

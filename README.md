@@ -13,6 +13,7 @@ The BambooKit website: landing page, install instructions, docs, sign-in, a view
 | `/devices`, `/approvals` | Devices and pending approvals (view only) |
 | `/share/<id>` | A shared session (Render rewrites `/share/*` to `/share/index.html`) |
 | `/install.ps1` | One-line Windows installer (`public/install.ps1`) |
+| `/install.sh` | One-line macOS installer (`public/install.sh`) |
 | `/security`, `/privacy`, `/terms` | Policies |
 
 ## Configuration

@@ -7,7 +7,7 @@ import { CodeBlock } from "@/components/site/CodeBlock";
 import { ButtonLink, Card, ErrorState, Notice, OnlineDot, Spinner, cx } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useLiveDevices } from "@/lib/live";
-import { INSTALL_COMMAND, LINKS } from "@/lib/config";
+import { INSTALL_COMMAND, LINKS, MAC_INSTALL_COMMAND } from "@/lib/config";
 
 function Step({ n, title, done, waiting, icon, children }: { n: number; title: string; done: boolean; waiting?: boolean; icon: ReactNode; children: ReactNode }) {
   return (
@@ -55,7 +55,7 @@ export function WelcomeView() {
         <div className="text-xs font-medium uppercase tracking-wider text-bk-faint">Welcome</div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Set up BambooKit</h1>
         <p className="mt-2 text-bk-muted">
-          The agent runs on your Windows PC, and your sessions are stored there. Connect your PC once and you can follow every session from
+          The agent runs on your Windows PC or Mac, and your sessions are stored there. Connect your PC once and you can follow every session from
           here and from your phone.
         </p>
       </div>
@@ -79,12 +79,18 @@ export function WelcomeView() {
         <Step n={1} title="Install BambooKit Desktop" done={hasPc} icon={<Download className="size-4" />}>
           <p>On your Windows 10 or 11 (64-bit) PC, open PowerShell and run:</p>
           <CodeBlock code={INSTALL_COMMAND} />
+          <p>On a Mac (macOS 11 or later, Apple Silicon or Intel), open Terminal and run:</p>
+          <CodeBlock code={MAC_INSTALL_COMMAND} />
           <p className="text-xs text-bk-faint">
-            It downloads the latest installer from the{" "}
+            Each downloads the latest installer from the{" "}
             <a href={LINKS.releases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
-              releases page
+              Windows
             </a>{" "}
-            and runs it. More options in the <Link href="/docs/install/" className="underline underline-offset-2 hover:text-bk-fg">install guide</Link>.
+            or{" "}
+            <a href={LINKS.macReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+              macOS
+            </a>{" "}
+            releases page and installs it. More options in the <Link href="/docs/install/" className="underline underline-offset-2 hover:text-bk-fg">install guide</Link>.
           </p>
         </Step>
 

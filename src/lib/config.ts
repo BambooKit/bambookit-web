@@ -42,9 +42,13 @@ export const LINKS = {
   github: "https://github.com/BambooKit/bambookit-application",
   releases: "https://github.com/BambooKit/bambookit-application/releases/latest",
   androidReleases: "https://github.com/BambooKit/bambookit-android/releases/latest",
+  macReleases: "https://github.com/BambooKit/bambookit-mac/releases",
   discussions: "https://github.com/BambooKit/bambookit-application/discussions",
   bugReport: "https://github.com/BambooKit/bambookit-application/issues/new?template=bug_report.yml",
   featureRequest: "https://github.com/BambooKit/bambookit-application/issues/new?template=feature_request.yml",
 };
 
 export const INSTALL_COMMAND = "irm https://bambookit-web.onrender.com/install.ps1 | iex";
+
+/** One-line installer for macOS (public/install.sh). */
+export const MAC_INSTALL_COMMAND = "curl -fsSL https://bambookit-web.onrender.com/install.sh | bash";

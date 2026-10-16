@@ -18,11 +18,11 @@ export const DOCS: DocPage[] = [
     slug: "",
     title: "Introduction",
     section: "Get started",
-    summary: "BambooKit is an AI coding app for Windows, with your phone as the remote.",
+    summary: "BambooKit is an AI coding app for Windows and macOS, with your phone as the remote.",
     body: `
 BambooKit has three parts that share one account:
 
-- **BambooKit Desktop** runs on your Windows PC. You work with the coding agent there: chat, files, diffs, terminal, Git, MCP servers and models. Your sessions and project files stay on the PC.
+- **BambooKit Desktop** runs on your Windows PC or Mac. You work with the coding agent there: chat, files, diffs, terminal, Git, MCP servers and models. Your sessions and project files stay on the PC.
 - **BambooKit for Android** is the remote. Follow sessions live (todos, timeline, the live diagram, full diffs), answer the agent's approvals and questions, chat in a session after **Continue on PC**, rename and like sessions, add provider API keys to your PC, and see your profile statistics and achievements.
 - **This website** shows your PCs, sessions with their history, approvals and questions when you sign in, and has your account page. It can answer approvals and questions, rename and like sessions and ask your PC to continue a session; chatting happens on the PC or the phone.
 
@@ -57,7 +57,7 @@ A small cloud service, **BambooKit Cloud** (the BambooKit API), signs you in, pa
 
 ## Versions
 
-The newest version of each app, with its release notes, is listed under **Download and install** on the [home page](/#install) and on the **Updates** screen of the Android app. Requirements: Windows 10 or 11 (64-bit) for Desktop, Android 8.0 or newer for the phone app. When a feature needs a newer BambooKit Desktop than the one on your PC, the phone and this site say **Update BambooKit Desktop**; see [Desktop compatibility](/docs/updates#desktop-compatibility).
+The newest version of each app, with its release notes, is listed under **Download and install** on the [home page](/#install) and on the **Updates** screen of the Android app. Requirements: Windows 10 or 11 (64-bit), or macOS 11 Big Sur or later (Apple Silicon or Intel), for Desktop, Android 8.0 or newer for the phone app. When a feature needs a newer BambooKit Desktop than the one on your PC, the phone and this site say **Update BambooKit Desktop**; see [Desktop compatibility](/docs/updates#desktop-compatibility).
 
 ## Next steps
 
@@ -81,7 +81,7 @@ BambooKit is created and maintained by Satyam Pote. BambooKit Desktop is built o
 
 | Part | Where it runs | What it does |
 |---|---|---|
-| **BambooKit Desktop** | Your Windows PC | Runs the agent on 127.0.0.1, stores sessions, executes actions you send from the phone |
+| **BambooKit Desktop** | Your Windows PC or Mac | Runs the agent on 127.0.0.1, stores sessions, executes actions you send from the phone |
 | **BambooKit Cloud** | [bambookit-api.onrender.com](https://bambookit-api.onrender.com/health) | Checks sign-ins, registers devices, pairs phones, keeps the session index and approvals, relays live data |
 | **BambooKit for Android** | Your phone | The remote |
 | **BambooKit Web** | [bambookit-web.onrender.com](https://bambookit-web.onrender.com) | Install, docs, your sessions, approvals and profile, shared session links |
@@ -137,7 +137,7 @@ The hosted API runs on a free plan that sleeps after about 15 minutes without tr
     slug: "install",
     title: "Install",
     section: "Get started",
-    summary: "Install BambooKit Desktop on Windows and the Android app on your phone.",
+    summary: "Install BambooKit Desktop on Windows or macOS and the Android app on your phone.",
     body: `
 ## Windows
 
@@ -164,6 +164,30 @@ The script looks up the latest **BambooKit Desktop** release on GitHub, download
 | Settings, encrypted sign-in and device key | \`%APPDATA%\\BambooKit Desktop\\\` |
 
 Updates install automatically; see [Updates](/docs/updates).
+
+## macOS {#macos}
+
+Requirements: macOS 11 Big Sur or later, Apple Silicon or Intel.
+
+Open **Terminal** and run:
+
+\`\`\`bash
+curl -fsSL https://bambookit-web.onrender.com/install.sh | bash
+\`\`\`
+
+The script picks the build for your Mac (Apple Silicon or Intel), downloads the latest \`BambooKit-<version>-mac-arm64.dmg\` or \`BambooKit-<version>-mac-x64.dmg\` from the [macOS releases](https://github.com/BambooKit/bambookit-mac/releases), installs **BambooKit.app** into \`/Applications\` (or \`~/Applications\` without admin rights), clears the download quarantine and opens it. To install a specific version, end the line with \`| BAMBOOKIT_VERSION=1.0.8 bash\` instead.
+
+Or install it by hand:
+
+1. Download the DMG with the **Download for Mac** button on the [home page](/#install), or from the [macOS releases](https://github.com/BambooKit/bambookit-mac/releases): **mac-arm64** for Apple Silicon (M1 and newer), **mac-x64** for Intel Macs.
+2. Open the DMG and drag **BambooKit** to **Applications**.
+3. BambooKit is not notarized by Apple yet, so the first time right-click **BambooKit** in Applications and choose **Open → Open**. (Or run \`xattr -dr com.apple.quarantine /Applications/BambooKit.app\` once.)
+4. Sign in (or create an account), choose **Add project**, pick a project folder and start a session.
+
+| What | Where |
+|---|---|
+| Program | \`/Applications/BambooKit.app\` |
+| Settings, sign-in and device key | \`~/Library/Application Support/com.bambookit.desktop\` |
 
 ## Android
 
@@ -200,6 +224,7 @@ bun run package:win
 ## Uninstall
 
 - **Windows:** Settings → Apps → BambooKit → Uninstall. To remove the saved sign-in and device key too, delete \`%APPDATA%\\BambooKit Desktop\\bambookit\\\`.
+- **macOS:** in Terminal, run \`osascript -e 'quit app "BambooKit"'; rm -rf /Applications/BambooKit.app ~/Library/Application\\ Support/com.bambookit.desktop\`. This also removes the saved sign-in and device key.
 - **Android:** uninstall the app.
 - Then revoke the device from another device so it disappears from your account.
 `,
@@ -1569,6 +1594,10 @@ Use Help → **Export logs** in Desktop and attach the file to a [bug report](ht
 ## Windows says "Windows protected your PC"
 
 That is SmartScreen. The BambooKit installer is not code-signed yet, so Windows doesn't recognise it. Choose **More info**, check that the file is **BambooKit-Setup-<version>-x64.exe** from the [releases page](https://github.com/BambooKit/bambookit-application/releases/latest), then **Run anyway**. The PowerShell installer prints a warning about the missing signature for the same reason.
+
+## macOS says BambooKit "can't be opened"
+
+BambooKit for macOS is not notarized by Apple yet, so Gatekeeper blocks a downloaded copy the first time. Right-click **BambooKit** in Applications and choose **Open → Open**, or run \`xattr -dr com.apple.quarantine /Applications/BambooKit.app\` once. The [one-line installer](/docs/install#macos) does this for you. If macOS says the app **is damaged and can't be opened**, that is the same check: run the \`xattr\` command above. Use the **mac-arm64** build on Apple Silicon and **mac-x64** on Intel.
 
 ## Android won't install the APK
 

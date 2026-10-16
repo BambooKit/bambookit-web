@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, Monitor, RefreshCw, Smartphone } from "lucide-react";
+import { Download, ExternalLink, Laptop, Monitor, RefreshCw, Smartphone } from "lucide-react";
 import { RichText } from "@/components/app/RichText";
 import { InlineError } from "@/components/ErrorInfo";
 import { Button, Card, Pill, Spinner, cx } from "@/components/ui";
@@ -9,15 +9,32 @@ import { ApiError, apiGet } from "@/lib/api";
 import { compareVersions, usePublicResource } from "@/lib/compat";
 import { LINKS } from "@/lib/config";
 import { fullDate } from "@/lib/format";
-import type { Device, Release, ReleasePlatform } from "@/lib/types";
+import type { Device, Release, ReleaseAsset, ReleasePlatform } from "@/lib/types";
 
-const PLATFORM: Record<ReleasePlatform, { name: string; icon: typeof Monitor; file: string }> = {
-  windows: { name: "BambooKit Desktop for Windows", icon: Monitor, file: "installer" },
-  android: { name: "BambooKit for Android", icon: Smartphone, file: "APK" },
+const PLATFORM: Record<ReleasePlatform, { name: string; label: string; icon: typeof Monitor; file: string; fallback: string }> = {
+  windows: { name: "BambooKit Desktop for Windows", label: "Windows", icon: Monitor, file: "installer", fallback: LINKS.releases },
+  mac: { name: "BambooKit Desktop for macOS", label: "macOS", icon: Laptop, file: "DMG", fallback: LINKS.macReleases },
+  android: { name: "BambooKit for Android", label: "Android", icon: Smartphone, file: "APK", fallback: LINKS.androidReleases },
 };
 
+const INTEL = /x64|x86_64|intel/i;
+
+/** A Mac release's disk images: Apple silicon (the preferred download) and Intel, when published. */
+function macDmgs(r: Release): { arm: ReleaseAsset | null; intel: ReleaseAsset | null } {
+  const dmgs = (r.downloads ?? (r.download ? [r.download] : [])).filter((d) => /\.dmg$/i.test(d.name));
+  const intel = dmgs.find((d) => INTEL.test(d.name)) ?? null;
+  const preferred = r.download && /\.dmg$/i.test(r.download.name) ? r.download : null;
+  const arm = preferred && !INTEL.test(preferred.name) ? preferred : (dmgs.find((d) => !INTEL.test(d.name)) ?? null);
+  return { arm, intel };
+}
+
+/** Whether a desktop device is a Mac (by the platform it reports). */
+function isMac(d: Device): boolean {
+  return /mac|darwin|os ?x/i.test(d.platform ?? "");
+}
+
 function releaseError(err: ApiError, platform: ReleasePlatform): string {
-  if (err.code === "NO_RELEASE") return `No ${platform === "android" ? "Android" : "Windows"} release has been published yet.`;
+  if (err.code === "NO_RELEASE") return `No ${PLATFORM[platform].label} release has been published yet.`;
   if (err.code === "UPDATE_SOURCE_UNAVAILABLE") return "The release server couldn't be reached, so the latest version isn't known right now. Try again in a moment.";
   if (err.code === "ROUTE_NOT_FOUND") return "The BambooKit service doesn't offer release information yet.";
   if (err.status === 0) return "Can't reach the BambooKit service to check the latest version.";
@@ -39,6 +56,7 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
   const p = PLATFORM[platform];
   const Icon = p.icon;
   const r = res.data;
+  const mac = r && platform === "mac" ? macDmgs(r) : null;
   return (
     <Card className="flex min-w-0 flex-col p-4 sm:p-5">
       <div className="flex items-start gap-3">
@@ -75,7 +93,33 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
       {r && (
         <>
           <div className="mt-4 flex flex-wrap gap-2">
-            {r.download ? (
+            {mac && (mac.arm || mac.intel) ? (
+              <>
+                {mac.arm && (
+                  <a
+                    href={mac.arm.url}
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-bk-accent px-4 py-2 text-sm font-medium text-bk-bg hover:opacity-90"
+                  >
+                    <Download className="size-4" /> Apple Silicon
+                    <span className="text-xs opacity-75">{size(mac.arm.size)}</span>
+                  </a>
+                )}
+                {mac.intel && (
+                  <a
+                    href={mac.intel.url}
+                    rel="noopener noreferrer"
+                    className={cx(
+                      "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
+                      mac.arm ? "border border-bk-line bg-bk-panel text-bk-fg hover:bg-bk-raised" : "bg-bk-accent text-bk-bg hover:opacity-90",
+                    )}
+                  >
+                    <Download className="size-4" /> Intel
+                    <span className="text-xs opacity-75">{size(mac.intel.size)}</span>
+                  </a>
+                )}
+              </>
+            ) : r.download ? (
               <a
                 href={r.download.url}
                 rel="noopener noreferrer"
@@ -95,7 +139,11 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
               <ExternalLink className="size-4" /> Release page
             </a>
           </div>
-          {r.download && <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">{r.download.name}</div>}
+          {mac && (mac.arm || mac.intel) ? (
+            <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">{[mac.arm, mac.intel].filter(Boolean).map((d) => d!.name).join(" · ")}</div>
+          ) : (
+            r.download && <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">{r.download.name}</div>
+          )}
 
           {desktops && desktops.length > 0 && (
             <ul className="mt-4 space-y-1.5 border-t border-bk-line pt-3 text-xs">
@@ -142,8 +190,9 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
 /** Latest BambooKit releases from GET /v1/releases/latest (public). */
 export function LatestReleases({ desktops, className }: { desktops?: Device[]; className?: string }) {
   return (
-    <div className={cx("grid gap-4 md:grid-cols-2", className)}>
-      <ReleaseCard platform="windows" desktops={desktops} />
+    <div className={cx("grid gap-4 md:grid-cols-2 xl:grid-cols-3", className)}>
+      <ReleaseCard platform="windows" desktops={desktops?.filter((d) => !isMac(d))} />
+      <ReleaseCard platform="mac" desktops={desktops?.filter(isMac)} />
       <ReleaseCard platform="android" />
     </div>
   );
@@ -158,10 +207,24 @@ function latest(platform: ReleasePlatform): Promise<Release | null> {
 }
 
 /**
- * A direct download link for the newest installer (Windows .exe) or APK (Android). It points at the
- * GitHub release page until the API names the file, and stays there if the API can't be reached.
+ * A direct download link for the newest installer (Windows .exe, Mac .dmg) or APK (Android). It points at
+ * the GitHub release page until the API names the file, and stays there if the API can't be reached. On Mac
+ * it downloads the Apple Silicon DMG and, when the release has one, adds a small link to the Intel DMG
+ * (`intel={false}` hides it).
  */
-export function DownloadButton({ platform, label, primary = true, className }: { platform: ReleasePlatform; label?: string; primary?: boolean; className?: string }) {
+export function DownloadButton({
+  platform,
+  label,
+  primary = true,
+  intel = true,
+  className,
+}: {
+  platform: ReleasePlatform;
+  label?: string;
+  primary?: boolean;
+  intel?: boolean;
+  className?: string;
+}) {
   const [release, setRelease] = useState<Release | null>(null);
   useEffect(() => {
     let alive = true;
@@ -170,10 +233,12 @@ export function DownloadButton({ platform, label, primary = true, className }: {
       alive = false;
     };
   }, [platform]);
-  const fallback = platform === "android" ? LINKS.androidReleases : LINKS.releases;
-  const href = release?.download?.url ?? release?.url ?? fallback;
-  const Icon = platform === "android" ? Smartphone : Monitor;
-  return (
+  const p = PLATFORM[platform];
+  const mac = release && platform === "mac" ? macDmgs(release) : null;
+  const href = (mac ? (mac.arm ?? mac.intel)?.url : release?.download?.url) ?? release?.url ?? p.fallback;
+  const Icon = p.icon;
+  const defaultLabel = platform === "android" ? "Download APK" : platform === "mac" ? "Download for Mac" : "Download for Windows";
+  const button = (
     <a
       href={href}
       rel="noopener noreferrer"
@@ -184,8 +249,17 @@ export function DownloadButton({ platform, label, primary = true, className }: {
       )}
     >
       <Icon className="size-4" />
-      {label ?? (platform === "android" ? "Download APK" : "Download for Windows")}
+      {label ?? defaultLabel}
       {release && <span className="font-mono text-xs opacity-75">v{release.version}</span>}
     </a>
+  );
+  if (!intel || !mac?.arm || !mac.intel) return button;
+  return (
+    <span className="inline-flex flex-col items-start gap-1">
+      {button}
+      <a href={mac.intel.url} rel="noopener noreferrer" className="px-1 text-xs text-bk-faint underline underline-offset-2 hover:text-bk-fg">
+        Intel Mac? Download the Intel DMG
+      </a>
+    </span>
   );
 }
