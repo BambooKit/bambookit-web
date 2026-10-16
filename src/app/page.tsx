@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Laptop, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, Terminal } from "lucide-react";
+import { ArrowRight, Check, Cloud, HardDrive, KeyRound, Laptop, Monitor, QrCode, ShieldCheck, Smartphone, Sparkles, SquareTerminal, Terminal } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site/Chrome";
 import { CodeBlock } from "@/components/site/CodeBlock";
-import { DownloadButton, LatestReleases } from "@/components/Releases";
+import { DownloadButton } from "@/components/Releases";
+import { ByVisitorOS, HeroDownload, LatestReleasesForVisitor } from "@/components/site/HeroDownload";
 import { HAS_SCREENSHOTS, Screenshots } from "@/components/site/Screenshots";
 import { INSTALL_COMMAND, LINKS, MAC_INSTALL_COMMAND } from "@/lib/config";
 
@@ -11,7 +12,7 @@ const PRODUCTS = [
   {
     icon: Monitor,
     name: "BambooKit Desktop",
-    tag: "Windows and macOS",
+    tag: "Windows, macOS and Linux",
     body: "A full AI coding workspace on your PC. Chat with agents that edit files, run commands and tests, and use Git, MCP servers and tools. Every change is shown as a diff you can review or revert.",
     points: ["Free BambooKit models included", "Or bring your own OpenAI, Anthropic, Google, OpenRouter or Ollama keys", "Sessions and chats stored on your PC"],
   },
@@ -24,8 +25,10 @@ const PRODUCTS = [
   },
 ];
 
+const LINUX_RUN_COMMAND = "chmod +x BambooKit-*.AppImage && ./BambooKit-*.AppImage";
+
 const STEPS = [
-  { icon: Terminal, title: "Install and sign in", body: "Download BambooKit Desktop for Windows or macOS (or run the one-line installer) and sign in with your account." },
+  { icon: Terminal, title: "Install and sign in", body: "Download BambooKit Desktop for Windows, macOS or Linux (or run the one-line installer) and sign in with your account." },
   { icon: Sparkles, title: "Work with the agent", body: "Open a project folder and start a session. The agent edits, runs and tests while you review every change." },
   { icon: QrCode, title: "Pair your phone", body: "In Desktop choose BambooKit → Add mobile device and scan the QR code with the Android app." },
 ];
@@ -62,6 +65,17 @@ const MAC_STEPS: ReactNode[] = [
   <>
     BambooKit is not notarized by Apple yet, so the first time you open a downloaded copy, right-click it in Applications and choose{" "}
     <span className="text-bk-fg">Open → Open</span>. The one-line installer does this for you.
+  </>,
+  <>Sign in, or create an account.</>,
+  <>
+    Choose <span className="text-bk-fg">Add project</span>, pick a project folder and start a session.
+  </>,
+];
+
+const LINUX_STEPS: ReactNode[] = [
+  <>Download the AppImage, make it executable and run it (the Terminal line above).</>,
+  <>
+    On Debian or Ubuntu you can install the .deb instead: <span className="font-mono text-bk-fg">sudo apt install ./BambooKit-*.deb</span>
   </>,
   <>Sign in, or create an account.</>,
   <>
@@ -148,7 +162,7 @@ export default function Home() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-24 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-2 rounded-full border border-bk-line bg-bk-panel px-3 py-1 text-xs text-bk-muted">
-                <span className="size-1.5 rounded-full bg-bk-ok" /> Windows and macOS desktop app · Android remote
+                <span className="size-1.5 rounded-full bg-bk-ok" /> Windows, macOS and Linux desktop app · Android remote
               </span>
               <h1 className="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 AI coding on your PC.
@@ -156,14 +170,10 @@ export default function Home() {
                 <span className="text-bk-muted">Follow it from anywhere.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-bk-muted">
-                BambooKit is an AI coding agent for Windows and macOS with your phone as the remote. The agent works on your project on your PC, your sessions stay
+                BambooKit is an AI coding agent for Windows, macOS and Linux with your phone as the remote. The agent works on your project on your PC, your sessions stay
                 there, and you can check in, review changes and answer its questions from your phone.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <DownloadButton platform="windows" />
-                <DownloadButton platform="mac" intel={false} />
-                <DownloadButton platform="android" label="Download for Android" primary={false} />
-              </div>
+              <HeroDownload />
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                 <a href="#install" className="inline-flex items-center gap-1.5 font-medium text-bk-muted hover:text-bk-fg">
                   Installation guide <ArrowRight className="size-4" />
@@ -239,83 +249,113 @@ export default function Home() {
         <section id="install" className="scroll-mt-20 border-y border-bk-line bg-bk-panel/40">
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Download and install</h2>
-            <p className="mt-2 max-w-2xl text-bk-muted">Install BambooKit Desktop on your Windows PC or Mac first, then the Android app on your phone. Both are free.</p>
+            <p className="mt-2 max-w-2xl text-bk-muted">Install BambooKit Desktop on your Windows PC, Mac or Linux PC first, then the Android app on your phone. Both are free.</p>
             <p className="mt-3 text-sm text-bk-faint">
               System requirements: <span className="text-bk-muted">Windows 10 or 11, 64-bit</span> ·{" "}
-              <span className="text-bk-muted">macOS 11 Big Sur or later (Apple Silicon or Intel)</span> · <span className="text-bk-muted">Android 8.0 or newer</span> · an
+              <span className="text-bk-muted">macOS 11 Big Sur or later (Apple Silicon or Intel)</span> ·{" "}
+              <span className="text-bk-muted">Linux x64 (AppImage or .deb)</span> · <span className="text-bk-muted">Android 8.0 or newer</span> · an
               internet connection on both.
             </p>
           </div>
-          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-2">
-            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
-              <h3 className="flex items-center gap-2 text-lg font-medium">
-                <Monitor className="size-5 text-bk-muted" /> Windows
-              </h3>
-              <div className="mt-4">
-                <DownloadButton platform="windows" label="Download BambooKit-Setup .exe" />
-              </div>
-              <p className="mt-4 text-sm text-bk-muted">Or open PowerShell and run:</p>
-              <CodeBlock code={INSTALL_COMMAND} />
-              <InstallSteps steps={WINDOWS_STEPS} />
-              <p className="mt-4 text-xs text-bk-faint">
-                All versions are on the{" "}
-                <a href={LINKS.releases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
-                  releases page
-                </a>
-                . Prefer to build it yourself? See{" "}
-                <Link href="/docs/install/#from-source" className="underline underline-offset-2 hover:text-bk-fg">
-                  install from source
-                </Link>
-                .
-              </p>
-            </div>
-            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
-              <h3 className="flex items-center gap-2 text-lg font-medium">
-                <Laptop className="size-5 text-bk-muted" /> macOS
-              </h3>
-              <div className="mt-4">
-                <DownloadButton platform="mac" label="Download BambooKit .dmg" />
-              </div>
-              <p className="mt-4 text-sm text-bk-muted">Or open Terminal and run:</p>
-              <CodeBlock code={MAC_INSTALL_COMMAND} />
-              <InstallSteps steps={MAC_STEPS} />
-              <p className="mt-4 text-xs text-bk-faint">
-                All versions are on the{" "}
-                <a href={LINKS.macReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
-                  macOS releases page
-                </a>
-                . Uninstall and other details are in the{" "}
-                <Link href="/docs/install/#macos" className="underline underline-offset-2 hover:text-bk-fg">
-                  install guide
-                </Link>
-                .
-              </p>
-            </div>
-            <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
-              <h3 className="flex items-center gap-2 text-lg font-medium">
-                <Smartphone className="size-5 text-bk-muted" /> Android
-              </h3>
-              <div className="mt-4">
-                <DownloadButton platform="android" label="Download BambooKit .apk" />
-              </div>
-              <InstallSteps steps={ANDROID_STEPS} />
-              <p className="mt-4 text-xs text-bk-faint">
-                All versions are on the{" "}
-                <a href={LINKS.androidReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
-                  Android releases page
-                </a>
-                . Stuck? See{" "}
-                <Link href="/docs/install-help/" className="underline underline-offset-2 hover:text-bk-fg">
-                  install and connection help
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
+          <ByVisitorOS
+            className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-2"
+            items={{
+              windows: (
+                <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+                  <h3 className="flex items-center gap-2 text-lg font-medium">
+                    <Monitor className="size-5 text-bk-muted" /> Windows
+                  </h3>
+                  <div className="mt-4">
+                    <DownloadButton platform="windows" label="Download BambooKit-Setup .exe" />
+                  </div>
+                  <p className="mt-4 text-sm text-bk-muted">Or open PowerShell and run:</p>
+                  <CodeBlock code={INSTALL_COMMAND} />
+                  <InstallSteps steps={WINDOWS_STEPS} />
+                  <p className="mt-4 text-xs text-bk-faint">
+                    All versions are on the{" "}
+                    <a href={LINKS.releases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                      releases page
+                    </a>
+                    . Prefer to build it yourself? See{" "}
+                    <Link href="/docs/install/#from-source" className="underline underline-offset-2 hover:text-bk-fg">
+                      install from source
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ),
+              mac: (
+                <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+                  <h3 className="flex items-center gap-2 text-lg font-medium">
+                    <Laptop className="size-5 text-bk-muted" /> macOS
+                  </h3>
+                  <div className="mt-4">
+                    <DownloadButton platform="mac" label="Download BambooKit .dmg" />
+                  </div>
+                  <p className="mt-4 text-sm text-bk-muted">Or open Terminal and run:</p>
+                  <CodeBlock code={MAC_INSTALL_COMMAND} label="Terminal" />
+                  <InstallSteps steps={MAC_STEPS} />
+                  <p className="mt-4 text-xs text-bk-faint">
+                    All versions are on the{" "}
+                    <a href={LINKS.macReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                      macOS releases page
+                    </a>
+                    . Uninstall and other details are in the{" "}
+                    <Link href="/docs/install/#macos" className="underline underline-offset-2 hover:text-bk-fg">
+                      install guide
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ),
+              linux: (
+                <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+                  <h3 className="flex items-center gap-2 text-lg font-medium">
+                    <SquareTerminal className="size-5 text-bk-muted" /> Linux
+                  </h3>
+                  <div className="mt-4">
+                    <DownloadButton platform="linux" label="Download BambooKit .AppImage" />
+                  </div>
+                  <p className="mt-4 text-sm text-bk-muted">Then, in Terminal:</p>
+                  <CodeBlock code={LINUX_RUN_COMMAND} label="Terminal" />
+                  <InstallSteps steps={LINUX_STEPS} />
+                  <p className="mt-4 text-xs text-bk-faint">
+                    All versions are on the{" "}
+                    <a href={LINKS.linuxReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                      releases page
+                    </a>
+                    .
+                  </p>
+                </div>
+              ),
+              android: (
+                <div className="min-w-0 rounded-2xl border border-bk-line bg-bk-bg p-6">
+                  <h3 className="flex items-center gap-2 text-lg font-medium">
+                    <Smartphone className="size-5 text-bk-muted" /> Android
+                  </h3>
+                  <div className="mt-4">
+                    <DownloadButton platform="android" label="Download BambooKit .apk" />
+                  </div>
+                  <InstallSteps steps={ANDROID_STEPS} />
+                  <p className="mt-4 text-xs text-bk-faint">
+                    All versions are on the{" "}
+                    <a href={LINKS.androidReleases} className="underline underline-offset-2 hover:text-bk-fg" rel="noopener noreferrer">
+                      Android releases page
+                    </a>
+                    . Stuck? See{" "}
+                    <Link href="/docs/install-help/" className="underline underline-offset-2 hover:text-bk-fg">
+                      install and connection help
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ),
+            }}
+          />
           <div id="downloads" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6">
             <h3 className="text-lg font-medium">Latest versions</h3>
             <p className="mt-1 text-sm text-bk-muted">Download the newest release directly, with its release notes.</p>
-            <LatestReleases className="mt-4" />
+            <LatestReleasesForVisitor className="mt-4" />
           </div>
         </section>
 

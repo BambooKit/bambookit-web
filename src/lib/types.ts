@@ -455,7 +455,7 @@ export interface ApiMeta {
   desktopRequirements: Record<string, { since: string; capability: string; reason: string }>;
 }
 
-export type ReleasePlatform = "windows" | "mac" | "android";
+export type ReleasePlatform = "windows" | "mac" | "linux" | "android";
 
 export interface ReleaseAsset {
   name: string;
@@ -471,9 +471,9 @@ export interface Release {
   publishedAt: string | null;
   notes: string;
   url: string;
-  /** The preferred file (Mac: the Apple silicon DMG). */
+  /** The preferred file (Mac: the Apple silicon DMG; Linux: the AppImage). */
   download: ReleaseAsset | null;
-  /** Every file for the platform, best first (Mac: arm64 DMG, Intel DMG, then zips). Missing on older APIs. */
+  /** Every file for the platform, best first (Mac: arm64 DMG, Intel DMG, then zips; Linux: AppImage, then .deb). Missing on older APIs. */
   downloads?: ReleaseAsset[];
 }
 

@@ -43,6 +43,7 @@ export const LINKS = {
   releases: "https://github.com/BambooKit/bambookit-application/releases/latest",
   androidReleases: "https://github.com/BambooKit/bambookit-android/releases/latest",
   macReleases: "https://github.com/BambooKit/bambookit-mac/releases",
+  linuxReleases: "https://github.com/BambooKit/bambookit-application/releases",
   discussions: "https://github.com/BambooKit/bambookit-application/discussions",
   bugReport: "https://github.com/BambooKit/bambookit-application/issues/new?template=bug_report.yml",
   featureRequest: "https://github.com/BambooKit/bambookit-application/issues/new?template=feature_request.yml",

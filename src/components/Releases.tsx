@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, Laptop, Monitor, RefreshCw, Smartphone } from "lucide-react";
+import { Download, ExternalLink, Laptop, Monitor, RefreshCw, Smartphone, SquareTerminal } from "lucide-react";
 import { RichText } from "@/components/app/RichText";
 import { InlineError } from "@/components/ErrorInfo";
 import { Button, Card, Pill, Spinner, cx } from "@/components/ui";
@@ -9,11 +9,13 @@ import { ApiError, apiGet } from "@/lib/api";
 import { compareVersions, usePublicResource } from "@/lib/compat";
 import { LINKS } from "@/lib/config";
 import { fullDate } from "@/lib/format";
+import type { MacArch } from "@/lib/os";
 import type { Device, Release, ReleaseAsset, ReleasePlatform } from "@/lib/types";
 
 const PLATFORM: Record<ReleasePlatform, { name: string; label: string; icon: typeof Monitor; file: string; fallback: string }> = {
   windows: { name: "BambooKit Desktop for Windows", label: "Windows", icon: Monitor, file: "installer", fallback: LINKS.releases },
   mac: { name: "BambooKit Desktop for macOS", label: "macOS", icon: Laptop, file: "DMG", fallback: LINKS.macReleases },
+  linux: { name: "BambooKit Desktop for Linux", label: "Linux", icon: SquareTerminal, file: "AppImage", fallback: LINKS.linuxReleases },
   android: { name: "BambooKit for Android", label: "Android", icon: Smartphone, file: "APK", fallback: LINKS.androidReleases },
 };
 
@@ -28,9 +30,49 @@ function macDmgs(r: Release): { arm: ReleaseAsset | null; intel: ReleaseAsset | 
   return { arm, intel };
 }
 
+/** A Linux release's files: the AppImage (preferred) and the .deb, when published. */
+function linuxFiles(r: Release): { appImage: ReleaseAsset | null; deb: ReleaseAsset | null } {
+  const files = r.downloads ?? (r.download ? [r.download] : []);
+  return {
+    appImage: files.find((d) => /\.appimage$/i.test(d.name)) ?? null,
+    deb: files.find((d) => /\.deb$/i.test(d.name)) ?? null,
+  };
+}
+
+interface FilePair {
+  primary: { asset: ReleaseAsset; label: string } | null;
+  secondary: { asset: ReleaseAsset; label: string } | null;
+}
+
+/** The two downloads a card offers for Mac (Apple Silicon / Intel DMG) and Linux (AppImage / .deb). */
+function filePair(r: Release, platform: ReleasePlatform): FilePair | null {
+  if (platform === "mac") {
+    const { arm, intel } = macDmgs(r);
+    if (!arm && !intel) return null;
+    return {
+      primary: arm ? { asset: arm, label: "Apple Silicon" } : intel && { asset: intel, label: "Intel" },
+      secondary: arm && intel ? { asset: intel, label: "Intel" } : null,
+    };
+  }
+  if (platform === "linux") {
+    const { appImage, deb } = linuxFiles(r);
+    if (!appImage && !deb) return null;
+    return {
+      primary: appImage ? { asset: appImage, label: "AppImage" } : deb && { asset: deb, label: ".deb" },
+      secondary: appImage && deb ? { asset: deb, label: ".deb" } : null,
+    };
+  }
+  return null;
+}
+
 /** Whether a desktop device is a Mac (by the platform it reports). */
 function isMac(d: Device): boolean {
   return /mac|darwin|os ?x/i.test(d.platform ?? "");
+}
+
+/** Whether a desktop device runs Linux (by the platform it reports). */
+function isLinux(d: Device): boolean {
+  return /linux/i.test(d.platform ?? "");
 }
 
 function releaseError(err: ApiError, platform: ReleasePlatform): string {
@@ -56,7 +98,7 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
   const p = PLATFORM[platform];
   const Icon = p.icon;
   const r = res.data;
-  const mac = r && platform === "mac" ? macDmgs(r) : null;
+  const pair = r ? filePair(r, platform) : null;
   return (
     <Card className="flex min-w-0 flex-col p-4 sm:p-5">
       <div className="flex items-start gap-3">
@@ -93,30 +135,24 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
       {r && (
         <>
           <div className="mt-4 flex flex-wrap gap-2">
-            {mac && (mac.arm || mac.intel) ? (
+            {pair ? (
               <>
-                {mac.arm && (
-                  <a
-                    href={mac.arm.url}
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-bk-accent px-4 py-2 text-sm font-medium text-bk-bg hover:opacity-90"
-                  >
-                    <Download className="size-4" /> Apple Silicon
-                    <span className="text-xs opacity-75">{size(mac.arm.size)}</span>
-                  </a>
-                )}
-                {mac.intel && (
-                  <a
-                    href={mac.intel.url}
-                    rel="noopener noreferrer"
-                    className={cx(
-                      "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
-                      mac.arm ? "border border-bk-line bg-bk-panel text-bk-fg hover:bg-bk-raised" : "bg-bk-accent text-bk-bg hover:opacity-90",
-                    )}
-                  >
-                    <Download className="size-4" /> Intel
-                    <span className="text-xs opacity-75">{size(mac.intel.size)}</span>
-                  </a>
+                {[pair.primary, pair.secondary].map(
+                  (f, i) =>
+                    f && (
+                      <a
+                        key={f.asset.url}
+                        href={f.asset.url}
+                        rel="noopener noreferrer"
+                        className={cx(
+                          "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
+                          i === 0 ? "bg-bk-accent text-bk-bg hover:opacity-90" : "border border-bk-line bg-bk-panel text-bk-fg hover:bg-bk-raised",
+                        )}
+                      >
+                        <Download className="size-4" /> {f.label}
+                        <span className="text-xs opacity-75">{size(f.asset.size)}</span>
+                      </a>
+                    ),
                 )}
               </>
             ) : r.download ? (
@@ -139,8 +175,10 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
               <ExternalLink className="size-4" /> Release page
             </a>
           </div>
-          {mac && (mac.arm || mac.intel) ? (
-            <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">{[mac.arm, mac.intel].filter(Boolean).map((d) => d!.name).join(" · ")}</div>
+          {pair ? (
+            <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">
+              {[pair.primary, pair.secondary].flatMap((f) => (f ? [f.asset.name] : [])).join(" · ")}
+            </div>
           ) : (
             r.download && <div className="mt-1.5 truncate font-mono text-[11px] text-bk-faint">{r.download.name}</div>
           )}
@@ -187,13 +225,21 @@ function ReleaseCard({ platform, desktops }: { platform: ReleasePlatform; deskto
   );
 }
 
-/** Latest BambooKit releases from GET /v1/releases/latest (public). */
-export function LatestReleases({ desktops, className }: { desktops?: Device[]; className?: string }) {
+const ORDER: ReleasePlatform[] = ["windows", "mac", "linux", "android"];
+
+/** Latest BambooKit releases from GET /v1/releases/latest (public). `first` moves one platform to the front. */
+export function LatestReleases({ desktops, first, className }: { desktops?: Device[]; first?: ReleasePlatform | null; className?: string }) {
+  const order = first ? [first, ...ORDER.filter((p) => p !== first)] : ORDER;
+  const mine: Partial<Record<ReleasePlatform, Device[] | undefined>> = {
+    windows: desktops?.filter((d) => !isMac(d) && !isLinux(d)),
+    mac: desktops?.filter(isMac),
+    linux: desktops?.filter(isLinux),
+  };
   return (
-    <div className={cx("grid gap-4 md:grid-cols-2 xl:grid-cols-3", className)}>
-      <ReleaseCard platform="windows" desktops={desktops?.filter((d) => !isMac(d))} />
-      <ReleaseCard platform="mac" desktops={desktops?.filter(isMac)} />
-      <ReleaseCard platform="android" />
+    <div className={cx("grid gap-4 md:grid-cols-2", className)}>
+      {order.map((p) => (
+        <ReleaseCard key={p} platform={p} desktops={mine[p]} />
+      ))}
     </div>
   );
 }
@@ -207,22 +253,24 @@ function latest(platform: ReleasePlatform): Promise<Release | null> {
 }
 
 /**
- * A direct download link for the newest installer (Windows .exe, Mac .dmg) or APK (Android). It points at
- * the GitHub release page until the API names the file, and stays there if the API can't be reached. On Mac
- * it downloads the Apple Silicon DMG and, when the release has one, adds a small link to the Intel DMG
- * (`intel={false}` hides it).
+ * A direct download link for the newest installer (Windows .exe, Mac .dmg, Linux AppImage) or APK (Android).
+ * It points at the GitHub release page until the API names the file, and stays there if the API can't be
+ * reached. On Mac it downloads the DMG for `macArch` (Apple Silicon unless "intel") and adds a small link to
+ * the other one; on Linux it adds a small link to the .deb. `alternate={false}` hides that link.
  */
 export function DownloadButton({
   platform,
   label,
   primary = true,
-  intel = true,
+  alternate = true,
+  macArch = null,
   className,
 }: {
   platform: ReleasePlatform;
   label?: string;
   primary?: boolean;
-  intel?: boolean;
+  alternate?: boolean;
+  macArch?: MacArch;
   className?: string;
 }) {
   const [release, setRelease] = useState<Release | null>(null);
@@ -234,10 +282,26 @@ export function DownloadButton({
     };
   }, [platform]);
   const p = PLATFORM[platform];
-  const mac = release && platform === "mac" ? macDmgs(release) : null;
-  const href = (mac ? (mac.arm ?? mac.intel)?.url : release?.download?.url) ?? release?.url ?? p.fallback;
+  let main: ReleaseAsset | null | undefined = release?.download;
+  let other: { asset: ReleaseAsset; text: string } | null = null;
+  if (release && platform === "mac") {
+    const { arm, intel } = macDmgs(release);
+    if (macArch === "intel") {
+      main = intel ?? arm;
+      if (intel && arm) other = { asset: arm, text: "Apple Silicon Mac? Download the Apple Silicon DMG" };
+    } else {
+      main = arm ?? intel;
+      if (arm && intel) other = { asset: intel, text: "Intel Mac? Download the Intel DMG" };
+    }
+  } else if (release && platform === "linux") {
+    const { appImage, deb } = linuxFiles(release);
+    main = appImage ?? deb ?? release.download;
+    if (appImage && deb) other = { asset: deb, text: "Debian or Ubuntu? Download the .deb" };
+  }
+  const href = main?.url ?? release?.url ?? p.fallback;
   const Icon = p.icon;
-  const defaultLabel = platform === "android" ? "Download APK" : platform === "mac" ? "Download for Mac" : "Download for Windows";
+  const defaultLabel =
+    platform === "android" ? "Download APK" : platform === "mac" ? "Download for Mac" : platform === "linux" ? "Download for Linux" : "Download for Windows";
   const button = (
     <a
       href={href}
@@ -253,12 +317,12 @@ export function DownloadButton({
       {release && <span className="font-mono text-xs opacity-75">v{release.version}</span>}
     </a>
   );
-  if (!intel || !mac?.arm || !mac.intel) return button;
+  if (!alternate || !other) return button;
   return (
     <span className="inline-flex flex-col items-start gap-1">
       {button}
-      <a href={mac.intel.url} rel="noopener noreferrer" className="px-1 text-xs text-bk-faint underline underline-offset-2 hover:text-bk-fg">
-        Intel Mac? Download the Intel DMG
+      <a href={other.asset.url} rel="noopener noreferrer" className="px-1 text-xs text-bk-faint underline underline-offset-2 hover:text-bk-fg">
+        {other.text}
       </a>
     </span>
   );
